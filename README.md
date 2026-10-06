@@ -1,0 +1,75 @@
+# ChambaMatch Android — empleos que encajan con tu perfil
+
+Aplicación autónoma en **Kotlin y Jetpack Compose** para buscar empleos, comparar requisitos con tu experiencia y organizar postulaciones. Funciona en **Android 8 o posterior**, con tu perfil y aprendizaje guardados en el celular.
+
+**Versión 2.5.0 · Android job finder · job matching · employment tracker**
+
+[Descargar APK 2.5.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.5.0.apk) · [Guía completa](docs/GUIA.md) · [Investigación y referencias](REFERENCIAS.md)
+
+## Qué puedes hacer
+
+- Seleccionar entre **250 países y territorios**, incluido Brasil, sus regiones o **Cualquier región**; también elegir Todo el mundo y modalidad remota.
+- Consultar anuncios públicos de **LinkedIn**, **Prácticas.pe** y **Convocatorias de Trabajo**, o añadir una descripción manualmente. Los dos portales peruanos mantienen su cobertura local.
+- Comparar los requisitos detectados en la descripción con tu carrera, condición académica, habilidades, experiencia e idiomas, conservando la frase del anuncio como evidencia.
+- Distinguir requisitos obligatorios y deseables, brechas y datos pendientes de confirmar. Las valoraciones ajustan el orden mediante aprendizaje local sin superar los filtros ni las brechas obligatorias.
+- Marcar **Me interesa**, guardar ofertas y verlas en **Seguimiento**, ordenadas por cierre, incluso después de cambiar los filtros o el país.
+- Organizar cada postulación como Pendiente, Preparando, Postulada o Descartada; revisar los días restantes y marcar qué requisitos tienes preparados.
+- Volver a consultar las fuentes para revisar fechas y descripciones. Exportar y restaurar una copia con perfil, ofertas, valoraciones y seguimiento.
+
+## Interfaz
+
+Inicio con acceso a recomendaciones y agenda, botón de búsqueda siempre visible y tarjetas de ofertas con sueldo, región, vacantes y contrato.
+
+| Pantalla principal | Agenda de postulación |
+| --- | --- |
+| <img src="screenshots/inicio-2.5.0.png" width="280" alt="Inicio de ChambaMatch 2.5.0"> | <img src="screenshots/agenda-2.5.0.png" width="280" alt="Agenda con una oferta ficticia de prueba"> |
+
+La agenda de la captura contiene una oferta ficticia utilizada exclusivamente en pruebas.
+
+## Instalar y empezar
+
+1. Descarga la [APK de prueba 2.5.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.5.0.apk) e instálala. Si ya usas ChambaMatch, instala encima **sin desinstalar** para conservar tus datos.
+2. En **Perfil**, completa tu información real: carrera, habilidades y experiencia. Puedes escribir una duración clara, como «Tengo seis meses de experiencia», o indicar tus meses totales.
+3. En **Buscar**, selecciona país, región, modalidad, cargo y tipo de oportunidad. Pulsa **Buscar trabajos**.
+4. Revisa en **Ofertas** la evidencia de requisitos. **Me interesa** o el marcador incorporan la oferta a **Seguimiento**.
+5. En **Seguimiento**, prepara los requisitos, organiza el estado y revisa los cierres. **Revisar fechas en las fuentes** consulta las ofertas seleccionadas y conserva los datos anteriores si falla una fuente.
+
+El perfil, el análisis, las valoraciones y la agenda funcionan sin computadora ni servidor. Internet permite consultar nuevos anuncios, revisar fuentes y abrir enlaces originales.
+
+## Evaluación y cobertura
+
+La compatibilidad es orientativa y utiliza reglas de extracción y una regresión logística local, sin un modelo semántico preentrenado. No reconoce exhaustivamente todos los requisitos o idiomas. Mencionar una habilidad no demuestra un nivel avanzado, una certificación o experiencia específica. Las condiciones desconocidas se muestran pendientes; marcar un requisito como preparado no cambia la evaluación del perfil.
+
+Los listados públicos tienen cobertura parcial y pueden cambiar o bloquear la lectura. Seleccionar un país no garantiza anuncios en él. LinkedIn puede omitir descripciones o fechas: la app informa la falta de evidencia. Revisa el anuncio y las bases antes de postular.
+
+## Desarrollo y pruebas
+
+Abre la raíz del repositorio en Android Studio. Usa JDK 17, Android SDK 37 y Build Tools 36.0.0. El proyecto fija AGP 9.4.1, Gradle 9.6.0 y compilador Compose 2.2.10. Incluye Gradle Wrapper.
+
+```sh
+./gradlew assembleDebug testDebugUnitTest lintDebug
+```
+
+Con un dispositivo o emulador abierto:
+
+```sh
+./gradlew connectedDebugAndroidTest
+```
+
+Las consultas reales son optativas:
+
+```sh
+./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.liveSources=true
+```
+
+Validación de 2.5.0 el 6 de octubre de 2026: **47 pruebas unitarias y 13 instrumentadas locales aprobadas**, compilación y lint aprobados en Android 17. Las cuatro pruebas optativas de red se omitieron en esa validación. Se probaron requisitos, brechas obligatorias, deseables, seguimiento fuera de filtros, fechas, actualización de descripciones, bloqueo sin pérdida de datos, aprendizaje reversible y copias de seguridad.
+
+El APK generado está en `app/build/outputs/apk/debug/app-debug.apk`. La APK incluida en `apk/` utiliza firma de prueba y conserva el identificador `pe.chambamatch` para actualizar las versiones anteriores.
+
+## Datos y licencias
+
+Los datos personales se guardan en el almacenamiento privado del celular. Las copias personales, claves de firma, archivos de configuración local y resultados de compilación quedan fuera del repositorio. El APK contiene el catálogo geográfico, no tu perfil ni tus ofertas personales.
+
+Código bajo [Apache License 2.0](LICENSE). El catálogo derivado de [Countries States Cities Database](https://github.com/dr5hn/countries-states-cities-database) incluye 250 países y territorios y 5.317 nombres de regiones, bajo **ODbL 1.0**; su [licencia](app/src/main/assets/world-regions-LICENSE.txt) y [atribución](app/src/main/assets/world-regions-NOTICE.txt) están incluidas.
+
+La versión web anterior está en [peru-job-finder](https://github.com/HEYLER1/peru-job-finder).

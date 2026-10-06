@@ -1,0 +1,11 @@
+.gradle/
+.kotlin/
+**/build/
+local.properties
+*.jks
+*.keystore
+.DS_Store
+.idea/
+*.iml
+data/
+chambamatch.json

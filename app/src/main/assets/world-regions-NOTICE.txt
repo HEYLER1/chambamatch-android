@@ -1,0 +1,5 @@
+Data by Countries States Cities Database
+https://github.com/dr5hn/countries-states-cities-database
+ODbL v1.0. Derived selection of country codes, Spanish labels and region names.
+Downloaded 2026-10-06 from json/countries.json and json/countries+states.json.
+The derived database is distributed under ODbL v1.0; see world-regions-LICENSE.txt.
