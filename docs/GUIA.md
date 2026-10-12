@@ -4,14 +4,14 @@ La app funciona en Android 8 o posterior **sin computadora, sin servidor y sin P
 
 ## Instalar y usar
 
-Compila o instala el APK de prueba (`apk/ChambaMatch-2.5.0.apk`, o `app/build/outputs/apk/debug/app-debug.apk` después de compilar) y abre **ChambaMatch Perú**. No hay pantalla de conexión ni claves de servidor.
+Compila o instala el APK de prueba (`apk/ChambaMatch-2.6.0.apk`, o `app/build/outputs/apk/debug/app-debug.apk` después de compilar) y abre **ChambaMatch Perú**. No hay pantalla de conexión ni claves de servidor.
 
 Instala la actualización sobre la app existente, sin desinstalar, para conservar tus datos.
 
 1. Completa **Perfil** con tu carrera, condición académica, experiencia y habilidades.
 2. En **Buscar**, selecciona **País** entre 250 países y territorios, incluyendo Brasil, o **Todo el mundo**. Selecciona **Región** o **Cualquier región**; ambos controles son listas, sin escribir ubicaciones. Elige cargo, modalidad y tipo; **Más filtros y fuentes** contiene los ajustes adicionales.
-3. Pulsa **Buscar trabajos**. Se abre **Ofertas** y aparecen los resultados conforme termina cada fuente. Puedes cancelar la búsqueda.
-4. En **Ofertas**, revisa las evidencias del anuncio y los requisitos obligatorios o deseables. **Me interesa / No me interesa** personalizan el orden; puedes deshacer cada valoración. **Me interesa** y el marcador incorporan la oferta a **Seguimiento**, donde organizas la postulación y preparas cada requisito.
+3. Pulsa **Buscar trabajos**. Se abre **Inicio** y aparecen los resultados conforme termina cada fuente. Puedes cancelar la búsqueda.
+4. En **Inicio**, revisa las evidencias del anuncio y los requisitos obligatorios o deseables. **Me interesa / No me interesa** personalizan el orden; puedes deshacer cada valoración. **Me interesa** y el marcador incorporan la oferta a **Seguimiento**, donde organizas la postulación y preparas cada requisito.
 5. Al cambiar filtros, las ofertas guardadas se filtran automáticamente. No necesita Internet. **Actualizar** vuelve a consultar las fuentes.
 
 La app empieza sin anuncios simulados. Los filtros no se amplían automáticamente cuando no hay coincidencias; las alternativas se identifican como fuera de los filtros.
@@ -30,7 +30,7 @@ Prácticas.pe y Convocatorias de Trabajo cubren Perú. Fuera de Perú, la app co
 
 **Ajustar a mi condición y experiencia** aparta ofertas con brechas detectadas en los requisitos. Los datos por confirmar permanecen visibles salvo que actives **Mostrar sólo requisitos comprobados con mi perfil**. En Perfil puedes escribir «Tengo seis meses de experiencia»; una duración clara se utiliza si el campo numérico está vacío. El campo numérico tiene prioridad. Múltiples duraciones o experiencia específica quedan por confirmar; no se suman ni se usan los requisitos del anuncio como experiencia del postulante.
 
-Las tarjetas muestran la empresa, el título grande, el cierre y cuatro bloques: **Sueldo, Región, Vacantes y Contrato**. Los datos ausentes se indican sin inventarlos. El marcador guarda ofertas; **Guardadas** permite filtrarlas, independientemente del aprendizaje. La comparación de requisitos y las valoraciones se despliegan al pulsar **Comparar requisitos y preferencias**. **Compartir** abre el selector Android y **Ver anuncio original** abre la fuente.
+Las tarjetas muestran la empresa, el título grande, el cierre y cuatro bloques: **Sueldo, Región, Vacantes y Contrato**. Los datos ausentes se indican sin inventarlos. El marcador guarda ofertas; **Guardadas** permite filtrarlas, independientemente del aprendizaje. La comparación de requisitos y las valoraciones se despliegan al pulsar **Requisitos**. **Compartir** abre el selector Android y **Ver anuncio original** abre la fuente.
 
 ## Rendimiento y búsquedas
 
@@ -93,3 +93,13 @@ Los días se recalculan al volver a abrir la app y cada minuto mientras está ab
 Validación final del 6 de octubre: compilación, lint, 47 pruebas unitarias y 13 pruebas instrumentadas locales aprobadas en Android 17. Se verificaron brechas de habilidades obligatorias, requisitos deseables, condición académica, idiomas, seguimiento de ofertas vencidas fuera de filtros, cierres extraídos de descripciones, actualización de fuentes y bloqueo sin pérdida de datos, aprendizaje reversible, persistencia y copia de la agenda. El recorrido Android verifica Me interesa, estado Preparando y la casilla de un requisito con avance persistente. Las cuatro pruebas optativas de red se omitieron en esta validación; la cobertura internacional validada en 2.4.0 no se presenta como una nueva prueba de red de 2.5.0.
 
 APK: `apk/ChambaMatch-2.5.0.apk`. Capturas reales del emulador: `screenshots/inicio-2.5.0.png` y `screenshots/agenda-2.5.0.png`; la agenda utiliza una oferta ficticia de prueba.
+
+## Cambios de 2.6.0 — 12 de octubre de 2026
+
+La navegación reúne **Inicio, Buscar, Seguimiento y Perfil**. Inicio carga las ofertas guardadas al abrir la app, sin repetir consultas de red. Buscar queda separado, con filtros directos y botón de búsqueda visible. Se retira la cabecera promocional grande y el texto permanente de carga completada; la marca ocupa una sola fila y la versión se muestra en Perfil.
+
+Las tarjetas compactas muestran empresa, título, ubicación, sueldo, contrato, cierre y afinidad, con guardar, Me interesa, requisitos y compartir. Los datos completos, fecha exacta, antigüedad, cuatro bloques, evidencia y descripción se despliegan mediante Requisitos. Los títulos largos se pueden expandir. La agenda reduce textos repetidos y mantiene fechas, estados y lista de preparación.
+
+Este ajuste modifica la presentación y la navegación; conserva el análisis, los países y regiones, el aprendizaje y los datos privados del celular.
+
+Validación de 2.6.0: 47 pruebas unitarias y 14 instrumentadas locales aprobadas, compilación y lint aprobados. APK: `apk/ChambaMatch-2.6.0.apk`. Capturas: `screenshots/inicio-2.6.0.png` y `screenshots/buscar-2.6.0.png`, con datos ficticios de prueba en Inicio. Se mantiene la firma y el identificador para actualizar sin desinstalar.

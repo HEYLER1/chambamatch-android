@@ -2,7 +2,7 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.plugin.compose
 android {
     namespace = "pe.chambamatch"
     compileSdk = 37
-    defaultConfig { applicationId = "pe.chambamatch"; minSdk = 26; targetSdk = 37; versionCode = 7; versionName = "2.5.0"; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
+    defaultConfig { applicationId = "pe.chambamatch"; minSdk = 26; targetSdk = 37; versionCode = 8; versionName = "2.6.0"; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
     buildFeatures { compose = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17; isCoreLibraryDesugaringEnabled = true }
 }

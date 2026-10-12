@@ -2,9 +2,9 @@
 
 Aplicación autónoma en **Kotlin y Jetpack Compose** para buscar empleos, comparar requisitos con tu experiencia y organizar postulaciones. Funciona en **Android 8 o posterior**, con tu perfil y aprendizaje guardados en el celular.
 
-**Versión 2.5.0 · Android job finder · job matching · employment tracker**
+**Versión 2.6.0 · Android job finder · job matching · employment tracker**
 
-[Descargar APK 2.5.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.5.0.apk) · [Guía completa](docs/GUIA.md) · [Investigación y referencias](REFERENCIAS.md)
+[Descargar APK 2.6.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.6.0.apk) · [Guía completa](docs/GUIA.md) · [Investigación y referencias](REFERENCIAS.md)
 
 ## Qué puedes hacer
 
@@ -18,20 +18,20 @@ Aplicación autónoma en **Kotlin y Jetpack Compose** para buscar empleos, compa
 
 ## Interfaz
 
-Inicio con acceso a recomendaciones y agenda, botón de búsqueda siempre visible y tarjetas de ofertas con sueldo, región, vacantes y contrato.
+Inicio carga las recomendaciones guardadas al abrir la app. Buscar contiene únicamente los filtros, con su botón siempre visible. Las tarjetas compactas resumen ubicación, sueldo, cierre y afinidad; Requisitos despliega la evaluación, la descripción y los cuatro bloques completos. Seguimiento conserva las fechas y el avance de postulación.
 
-| Pantalla principal | Agenda de postulación |
+| Inicio: recomendaciones | Buscar: filtros |
 | --- | --- |
-| <img src="screenshots/inicio-2.5.0.png" width="280" alt="Inicio de ChambaMatch 2.5.0"> | <img src="screenshots/agenda-2.5.0.png" width="280" alt="Agenda con una oferta ficticia de prueba"> |
+| <img src="screenshots/inicio-2.6.0.png" width="280" alt="Inicio con recomendaciones guardadas de ChambaMatch 2.6.0"> | <img src="screenshots/buscar-2.6.0.png" width="280" alt="Búsqueda separada con filtros de país y región"> |
 
-La agenda de la captura contiene una oferta ficticia utilizada exclusivamente en pruebas.
+Las ofertas de la captura de Inicio son ficticias y se utilizan exclusivamente en pruebas.
 
 ## Instalar y empezar
 
-1. Descarga la [APK de prueba 2.5.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.5.0.apk) e instálala. Si ya usas ChambaMatch, instala encima **sin desinstalar** para conservar tus datos.
+1. Descarga la [APK de prueba 2.5.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.6.0.apk) e instálala. Si ya usas ChambaMatch, instala encima **sin desinstalar** para conservar tus datos.
 2. En **Perfil**, completa tu información real: carrera, habilidades y experiencia. Puedes escribir una duración clara, como «Tengo seis meses de experiencia», o indicar tus meses totales.
 3. En **Buscar**, selecciona país, región, modalidad, cargo y tipo de oportunidad. Pulsa **Buscar trabajos**.
-4. Revisa en **Ofertas** la evidencia de requisitos. **Me interesa** o el marcador incorporan la oferta a **Seguimiento**.
+4. Revisa en **Inicio** la evidencia de requisitos. **Me interesa** o el marcador incorporan la oferta a **Seguimiento**.
 5. En **Seguimiento**, prepara los requisitos, organiza el estado y revisa los cierres. **Revisar fechas en las fuentes** consulta las ofertas seleccionadas y conserva los datos anteriores si falla una fuente.
 
 El perfil, el análisis, las valoraciones y la agenda funcionan sin computadora ni servidor. Internet permite consultar nuevos anuncios, revisar fuentes y abrir enlaces originales.
@@ -62,7 +62,7 @@ Las consultas reales son optativas:
 ./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.liveSources=true
 ```
 
-Validación de 2.5.0 el 6 de octubre de 2026: **47 pruebas unitarias y 13 instrumentadas locales aprobadas**, compilación y lint aprobados en Android 17. Las cuatro pruebas optativas de red se omitieron en esa validación. Se probaron requisitos, brechas obligatorias, deseables, seguimiento fuera de filtros, fechas, actualización de descripciones, bloqueo sin pérdida de datos, aprendizaje reversible y copias de seguridad.
+Validación del motor de 2.5.0 el 6 de octubre de 2026: **47 pruebas unitarias y 13 instrumentadas locales aprobadas**, compilación y lint aprobados en Android 17. Las cuatro pruebas optativas de red se omitieron en esa validación. Se probaron requisitos, brechas obligatorias, deseables, seguimiento fuera de filtros, fechas, actualización de descripciones, bloqueo sin pérdida de datos, aprendizaje reversible y copias de seguridad.
 
 El APK generado está en `app/build/outputs/apk/debug/app-debug.apk`. La APK incluida en `apk/` utiliza firma de prueba y conserva el identificador `pe.chambamatch` para actualizar las versiones anteriores.
 
@@ -73,3 +73,7 @@ Los datos personales se guardan en el almacenamiento privado del celular. Las co
 Código bajo [Apache License 2.0](LICENSE). El catálogo derivado de [Countries States Cities Database](https://github.com/dr5hn/countries-states-cities-database) incluye 250 países y territorios y 5.317 nombres de regiones, bajo **ODbL 1.0**; su [licencia](app/src/main/assets/world-regions-LICENSE.txt) y [atribución](app/src/main/assets/world-regions-NOTICE.txt) están incluidas.
 
 La versión web anterior está en [peru-job-finder](https://github.com/HEYLER1/peru-job-finder).
+
+### Validación de 2.6.0
+
+El 12 de octubre de 2026 pasaron **47 pruebas unitarias y 14 instrumentadas locales**, además de compilación y lint en Android 17. La nueva prueba inicia la app con dos ofertas ficticias guardadas y verifica que aparecen en Inicio antes de abrir Buscar, sin realizar consultas de red. También comprueba que los filtros y el botón de búsqueda están en Buscar y que se puede volver a Inicio conservando los resultados. Las cuatro pruebas optativas de red se omitieron.

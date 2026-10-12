@@ -14,6 +14,7 @@ import java.io.File
 /** Recorrido sin servidor ni conexión de red. Los datos ficticios sólo existen durante la prueba. */
 @RunWith(AndroidJUnit4::class)
 class AndroidFlowTest {
+    private val name = org.junit.rules.TestName()
     private val compose = createAndroidComposeRule<MainActivity>()
     private val fixture = object : ExternalResource() {
         private lateinit var file: File
@@ -21,13 +22,35 @@ class AndroidFlowTest {
         override fun before() {
             file = File(InstrumentationRegistry.getInstrumentation().targetContext.filesDir, "chambamatch.json")
             backup = if (file.exists()) file.readBytes() else null
-            file.writeText("""{"perfil":{},"ofertas":[],"feedback":{},"busquedas":{}}""")
+            if (name.methodName == "cachedOffersAppearOnHomeBeforeOpeningSearch") {
+                val today = java.time.LocalDate.now(java.time.ZoneId.of("America/Lima"))
+                file.writeText(org.json.JSONObject().put("perfil", org.json.JSONObject().put("carrera", "Sistemas").put("habilidades", "Kotlin, SQL, Python").put("situacion", "Estudiante")).put("ofertas", org.json.JSONArray(listOf(
+                    org.json.JSONObject().put("id", "cached-one").put("fuente", "manual").put("titulo", "Practicante preprofesional de desarrollo Kotlin").put("empresa", "Equipo de prueba").put("descripcion", "Requisitos: Kotlin y SQL.").put("ubicacion", "Lima").put("salario", 1300).put("moneda", "PEN").put("vacantes", 2).put("cierre", today.plusDays(14).toString()),
+                    org.json.JSONObject().put("id", "cached-two").put("fuente", "manual").put("titulo", "Analista de datos junior").put("empresa", "Laboratorio de prueba").put("descripcion", "Requisitos: Python y SQL.").put("ubicacion", "Remoto").put("modalidad", "remoto").put("salario", 2600).put("moneda", "PEN").put("cierre", today.plusDays(6).toString())
+                ))).put("feedback", org.json.JSONObject()).put("busquedas", org.json.JSONObject()).toString())
+            } else file.writeText("""{"perfil":{},"ofertas":[],"feedback":{},"busquedas":{}}""")
         }
         override fun after() { backup?.let { file.writeBytes(it) } ?: file.delete() }
     }
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(fixture).around(compose)
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(name).around(fixture).around(compose)
+    @Test fun cachedOffersAppearOnHomeBeforeOpeningSearch() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("app-ready").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Para ti").assertExists()
+        compose.onNodeWithText("2 coincidencias").assertExists()
+        compose.onNodeWithText("Practicante preprofesional de desarrollo Kotlin").assertIsDisplayed()
+        compose.onNodeWithText("Analista de datos junior").assertIsDisplayed()
+        compose.onNodeWithText("Cargo o palabras clave").assertDoesNotExist()
+        compose.onNodeWithText("Encuentra tu\npróxima oportunidad.").assertDoesNotExist()
+        InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("screencap -p /data/local/tmp/chamba-home-loaded.png").use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }
+        compose.onNodeWithText("Buscar").performClick()
+        compose.onNodeWithText("Cargo o palabras clave").assertExists()
+        compose.onNodeWithText("Buscar trabajos").assertIsDisplayed()
+        InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("screencap -p /data/local/tmp/chamba-search-preview.png").use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }
+        compose.onNodeWithText("Inicio").performClick()
+        compose.onNodeWithText("2 coincidencias").assertExists()
+    }
     @Test fun profileImportFilterAndLearnWithoutServer() {
-        compose.waitUntil(15_000) { compose.onAllNodesWithText("Lista. Tu perfil y tus anuncios se guardan en este celular.").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("app-ready").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Conexión").assertDoesNotExist()
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("screencap -p /data/local/tmp/chamba-home-preview.png").use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }
         compose.onNodeWithText("Perfil").performClick()
@@ -53,12 +76,12 @@ class AndroidFlowTest {
         compose.onNodeWithText("Más filtros y fuentes").assertExists()
         compose.waitForIdle()
         Thread.sleep(650)
-        compose.onNodeWithText("Ofertas").performClick()
+        compose.onNodeWithText("Inicio").performClick()
         compose.onNodeWithText("1 coincidencias").assertExists()
         compose.onNodeWithText("Oferta de prueba: desarrollador").assertExists()
         compose.onNodeWithTag("job-card").performScrollTo()
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("screencap -p /data/local/tmp/chamba-card-preview.png").use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }
-        compose.onNodeWithText("Comparar requisitos y preferencias").performScrollTo().performClick()
+        compose.onNodeWithText("Requisitos").performScrollTo().performClick()
         compose.onNodeWithText("Me interesa").performScrollTo().performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Preferencia actualizada. Aprendizaje procesado en el celular.").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Seguimiento").performClick()
@@ -72,13 +95,14 @@ class AndroidFlowTest {
         compose.onNodeWithText("Organizar requisitos").performScrollTo().performClick()
         compose.onNodeWithText("Habilidad: Python · compatible").performScrollTo().performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("1 de 2 requisitos preparados").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Ofertas").performClick()
-        compose.onNodeWithText("Comparar requisitos y preferencias").performScrollTo().performClick()
+        compose.onNodeWithText("Inicio").performClick()
+        compose.onNodeWithText("Requisitos").performScrollTo().performClick()
         compose.onNodeWithText("Deshacer valoración").performScrollTo().performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Deshacer valoración").fetchSemanticsNodes().isEmpty() }
     }
     @Test fun internationalControlsAndProfileTextWork() {
-        compose.waitUntil(15_000) { compose.onAllNodesWithText("Lista. Tu perfil y tus anuncios se guardan en este celular.").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("app-ready").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Buscar").performClick()
         compose.onNodeWithText("País: Perú").performClick()
         compose.onNodeWithTag("geo-options").performScrollToNode(hasText("Brasil"))
         compose.onNodeWithText("Brasil").performClick()

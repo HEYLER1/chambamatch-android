@@ -39,8 +39,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.foundation.background
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -81,15 +79,14 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     }
     LaunchedEffect(s.ready) { if (s.ready) while (true) { kotlinx.coroutines.delay(60_000); vm.refreshTracking() } }
     var extra by rememberSaveable { mutableStateOf("") }
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Surface(color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(14.dp)) { Text("CM", color = Color.White, fontWeight = FontWeight.Black, modifier = Modifier.padding(12.dp)) }
-            Column(Modifier.weight(1f)) { Text("ChambaMatch", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp); Text("OPORTUNIDADES PARA TI", fontSize = 10.sp, letterSpacing = 1.sp, color = Color(0xFF63748B)) }
-            Surface(color = Color.White, shape = RoundedCornerShape(10.dp)) { Text("2.5.0", fontSize = 11.sp, modifier = Modifier.padding(8.dp), color = Color(0xFF63748B)) }
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().testTag(if (s.ready) "app-ready" else "app-loading")) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Surface(color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(10.dp)) { Text("CM", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(8.dp)) }
+            Text("ChambaMatch", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
         }
         if (s.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-        Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(s.message, style = MaterialTheme.typography.bodySmall, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(vertical = 6.dp))
+        if (s.message !in listOf("Lista. Tu perfil y tus anuncios se guardan en este celular.", "Cargando tus datos del celular…")) Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(s.message, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(vertical = 2.dp))
             if (s.searching) TextButton(onClick = vm::cancelSearch) { Text("Cancelar") }
         }
         Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -97,15 +94,15 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
                 TextButton(onClick = { extra = "" }) { Text("Volver al perfil") }
                 Box(Modifier.weight(1f)) { if (extra == "datos") LocalData(s, vm) else Import(s, vm) }
             } else when (tab) {
-                0 -> Search(s, vm, { tab = 2 }, { tab = 1 }) { tab = 1; vm.search() }
-                1 -> Offers(s, vm) { tab = 0 }
+                0 -> Offers(s, vm) { tab = 1 }
+                1 -> Search(s, vm) { tab = 0; vm.search() }
                 2 -> Tracking(s, vm)
                 3 -> Profile(s, vm) { extra = it }
             }
         }
         NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
-            listOf("Buscar", "Ofertas", "Seguimiento", "Perfil").forEachIndexed { i, label ->
-                NavigationBarItem(selected = tab == i, onClick = { extra = ""; tab = i }, icon = { LineIcon(listOf("search", "work", "calendar", "people")[i]) }, label = { Text(label, fontWeight = if (tab == i) FontWeight.Bold else FontWeight.Normal) }, colors = NavigationBarItemDefaults.colors(indicatorColor = Color(0xFFFFE8E8), selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary))
+            listOf("Inicio", "Buscar", "Seguimiento", "Perfil").forEachIndexed { i, label ->
+                NavigationBarItem(selected = tab == i, onClick = { extra = ""; tab = i }, icon = { LineIcon(listOf("work", "search", "calendar", "people")[i]) }, label = { Text(label, fontWeight = if (tab == i) FontWeight.Bold else FontWeight.Normal) }, colors = NavigationBarItemDefaults.colors(indicatorColor = Color(0xFFFFE8E8), selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary))
             }
         }
     }
@@ -180,25 +177,12 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     if (pending != null) AlertDialog(onDismissRequest = { pending = null }, title = { Text("¿Restaurar esta copia?") }, text = { Text("Reemplazará el perfil, los anuncios y las valoraciones actuales de este celular.") },
         confirmButton = { TextButton(onClick = { pending?.let(vm::restore); pending = null }) { Text("Restaurar") } }, dismissButton = { TextButton(onClick = { pending = null }) { Text("Cancelar") } })
 }
-@Composable private fun Search(s: JobsState, vm: JobsViewModel, agenda: () -> Unit, recommendations: () -> Unit, search: () -> Unit) {
+@Composable private fun Search(s: JobsState, vm: JobsViewModel, search: () -> Unit) {
     var advanced by rememberSaveable { mutableStateOf(false) }
     fun set(key: String, value: Any) { vm.filters(JSONObject(s.filters.toString()).put(key, value)) }
     val enabled = s.ready && !s.busy
     Column(Modifier.fillMaxSize()) {
     Form(Modifier.weight(1f)) {
-        Column(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF4831C9), Color(0xFF2968D8), Color(0xFF009B9A))), RoundedCornerShape(26.dp)).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("TU TALENTO, TU SIGUIENTE PASO", color = Color(0xFFD7F4FF), fontSize = 10.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Bold)
-            Text("Encuentra tu\npróxima oportunidad.", color = Color.White, fontSize = 30.sp, lineHeight = 34.sp, fontWeight = FontWeight.ExtraBold)
-            Text("Recomendaciones según tu perfil. Fechas y requisitos siempre a mano.", color = Color.White.copy(alpha = .9f))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Surface(color = Color.White.copy(alpha = .16f), shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f).clickable(onClick = recommendations)) { Column(Modifier.padding(12.dp)) { Text("${s.result.rows("ofertas").size}", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold); Text("Coincidencias", color = Color.White, fontSize = 12.sp) } }
-                Surface(color = Color.White.copy(alpha = .16f), shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f).clickable(onClick = agenda)) { Column(Modifier.padding(12.dp)) { Text("${s.result.rows("seguimiento").size}", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold); Text("En seguimiento", color = Color.White, fontSize = 12.sp) } }
-            }
-            TextButton(onClick = agenda, colors = ButtonDefaults.textButtonColors(contentColor = Color.White)) { LineIcon("calendar", Color.White); Spacer(Modifier.width(8.dp)); Text("Ver mi agenda de postulación") }
-        }
-        val urgent = s.result.rows("seguimiento").count { it.text("estado") == "en plazo" && (RecommendationEngine.calendarDaysRemaining(it) ?: 999) in 0..3 && it.text("postulacion") !in listOf("postulada", "descartada") }
-        if (urgent > 0) Surface(color = Color(0xFFFFE9B8), shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().clickable(onClick = agenda)) { Text("$urgent ofertas que te interesan cierran en los próximos 3 días", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp)) }
-        Text("Diseña tu búsqueda", fontSize = 21.sp, fontWeight = FontWeight.Bold)
         Field("Cargo o palabras clave", s.filters.text("cargo"), enabled) { set("cargo", it.take(200)) }
         val country = WorldLocations.selected(s.countries, s.filters)
         val countryOptions = listOf("" to "Todo el mundo") + s.countries.map { it.name to it.label }
@@ -214,7 +198,6 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
         Check("Ajustar a mi condición y experiencia", s.filters.optBoolean("ajustar_perfil", true), enabled) { set("ajustar_perfil", it) }
         Choice("Tipo de oportunidad", s.filters.text("tipo"), types, enabled) { set("tipo", it) }
 
-        Text("Los cambios filtran tus ofertas guardadas automáticamente. Buscar trabajos consulta nuevos anuncios y guarda tus preferencias.", style = MaterialTheme.typography.bodySmall)
         TextButton(onClick = { advanced = !advanced }) { Text(if (advanced) "Cerrar opciones adicionales" else "Más filtros y fuentes") }
         if (advanced) {
             Choice("Publicadas en", s.filters.text("dias"), listOf("" to "Cualquier fecha", "1" to "24 horas", "3" to "3 días", "7" to "7 días", "14" to "14 días", "30" to "30 días"), enabled) { set("dias", it) }
@@ -239,7 +222,7 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     val profile = JSONObject(draft)
     fun set(key: String, value: String) { draft = JSONObject(draft).put(key, value).toString() }
     Form {
-        Text("Mi perfil", style = MaterialTheme.typography.titleLarge)
+        Text("Mi perfil · 2.6.0", style = MaterialTheme.typography.titleLarge)
         Text("Describe tu experiencia (ej. «Tengo seis meses de experiencia»), o indica tus meses totales. Los requisitos del anuncio se comparan con tu perfil guardado.", style = MaterialTheme.typography.bodySmall)
         listOf("carrera" to "Carrera o especialidad", "cargos_objetivo" to "Cargos que te interesan", "habilidades" to "Habilidades separadas por comas", "meses_experiencia" to "Meses de experiencia (0 si aún no tienes)", "ciclo" to "Ciclo actual", "experiencia" to "Experiencia, idiomas y otros datos").forEach { (key, name) ->
             Field(name, profile.text(key), !s.busy) { if (key !in listOf("meses_experiencia", "ciclo") || it.all(Char::isDigit)) set(key, it) }
@@ -259,24 +242,21 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     val shown = jobs.filter { when(mode) { "activa" -> it.text("estado") !in listOf("vencida", "cerrada") && it.text("postulacion") !in listOf("postulada", "descartada"); "postulada" -> it.text("postulacion") == "postulada"; else -> true } }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
-            Text("Tu agenda", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
-            Text("Las ofertas que te gustan y las guardadas, ordenadas por cierre. Incluye todos los países y tus filtros anteriores.", color = Color(0xFF63748B))
+            Text("Tu agenda", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
             OutlinedButton(onClick = vm::reviewAgenda, enabled = !s.busy && jobs.isNotEmpty()) { Text("Revisar fechas en las fuentes") }
             s.result.strings("revision_agenda").forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
-            Text("Los días se actualizan al abrir la app. La revisión consulta hasta 12 ofertas por vez.", style = MaterialTheme.typography.bodySmall)
             Choice("Ver", mode, listOf("activa" to "Por postular", "postulada" to "Postuladas", "todas" to "Todas, incluidas vencidas")) { mode = it }
             if (shown.isEmpty()) Text("Marca Me interesa o guarda una oferta para seguir sus fechas y preparar los requisitos.", modifier = Modifier.padding(vertical = 20.dp))
         }
         items(shown, key = { "track:${it.text("id")}" }) { job ->
             var expanded by rememberSaveable(job.text("id")) { mutableStateOf(false) }
             Surface(shape = RoundedCornerShape(24.dp), color = Color.White, border = BorderStroke(1.dp, Color(0xFFDBE1F1))) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val days = RecommendationEngine.calendarDaysRemaining(job)
                     val label = when { job.text("estado") in listOf("vencida", "cerrada") -> "Plazo cerrado"; days == 0 -> "Postula hoy"; days != null -> "Quedan $days días"; else -> "Fecha de cierre por confirmar" }
                     Surface(color = if (days != null && days in 0..3) Color(0xFFFFE5A1) else Color(0xFFEDE8FF), shape = RoundedCornerShape(12.dp)) { Text(label, fontWeight = FontWeight.Bold, modifier = Modifier.padding(10.dp)) }
                     Text(job.text("titulo"), fontSize = 21.sp, lineHeight = 25.sp, fontWeight = FontWeight.Bold)
                     Text(job.text("empresa"), color = Color(0xFF63748B))
-                    Text("Última lectura: ${job.text("revisado").take(10).ifBlank { "sin registrar" }}", style = MaterialTheme.typography.bodySmall)
                     InfoLine("calendar", "Cierre: ", job.text("cierre").ifBlank { "No publicado; consulta las bases" })
                     if (job.text("cierre_evidencia").isNotBlank()) Text(job.text("cierre_evidencia"), style = MaterialTheme.typography.bodySmall)
                     Choice("Estado de postulación", job.text("postulacion").ifBlank { "pendiente" }, listOf("pendiente" to "Pendiente", "preparando" to "Preparando", "postulada" to "Postulada", "descartada" to "Descartada"), !s.busy) { vm.track(job.text("id"), state = it) }
@@ -285,6 +265,7 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
                     Text("${checks.count { it.text("clave") in ready }} de ${checks.size} requisitos preparados", fontWeight = FontWeight.Bold)
                     TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Cerrar mi lista" else "Organizar requisitos") }
                     if (expanded) {
+                        Text("Última lectura: ${job.text("revisado").take(10).ifBlank { "sin registrar" }}", style = MaterialTheme.typography.bodySmall)
                         Text("Preparado significa que revisaste o reuniste la evidencia. La casilla no cambia la compatibilidad de tu perfil.", style = MaterialTheme.typography.bodySmall)
                         if (checks.isEmpty()) Text("No se reconocieron requisitos. Revisa la descripción y las bases del anuncio.")
                         checks.forEach { check ->
@@ -311,16 +292,19 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     val otherJobs = remember(s.result) { s.result.rows("alternativas") }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text("${jobs.size} coincidencias", style = MaterialTheme.typography.titleLarge)
-            Text("${s.result.optInt("total")} guardadas · ${s.result.optInt("valoraciones")} valoradas", style = MaterialTheme.typography.bodySmall)
-            FilterChip(selected = s.filters.optBoolean("solo_guardadas"), onClick = { vm.filters(s.filters.copyJson().put("solo_guardadas", !s.filters.optBoolean("solo_guardadas"))) }, enabled = !s.busy, label = { Text("Guardadas") })
-            if (s.searching) Text("La búsqueda continúa. Los resultados aparecen por fuente.")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = editSearch) { Text("Cambiar búsqueda") }
-                OutlinedButton(onClick = { vm.search(refresh = true) }, enabled = s.ready && !s.busy) { Text("Actualizar") }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Para ti", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("${jobs.size} coincidencias", style = MaterialTheme.typography.labelMedium, color = Color(0xFF63748B))
+                TextButton(onClick = { vm.search(refresh = true) }, enabled = s.ready && !s.busy) { Text("Actualizar") }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(WorldLocations.selected(s.countries, s.filters)?.label ?: "Todo el mundo", style = MaterialTheme.typography.labelMedium, color = Color(0xFF63748B))
+                if (s.filters.text("ubicacion").isNotBlank()) Text(s.filters.text("ubicacion"), style = MaterialTheme.typography.labelMedium, color = Color(0xFF63748B), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                FilterChip(selected = s.filters.optBoolean("solo_guardadas"), onClick = { vm.filters(s.filters.copyJson().put("solo_guardadas", !s.filters.optBoolean("solo_guardadas"))) }, enabled = !s.busy, label = { Text("Guardadas") })
             }
             if (jobs.isEmpty()) {
-                Text(if (s.searching) "Consultando las fuentes… Puedes cancelar sin perder tus ofertas guardadas." else "Sin coincidencias con estos filtros. Cambia el cargo, ubicación o tipo, o busca nuevos anuncios.")
+                Text(if (s.searching) "Consultando las fuentes… Puedes cancelar sin perder tus ofertas guardadas." else if (s.result.optInt("total") == 0) "Busca trabajos para cargar tus primeras recomendaciones." else "Sin coincidencias con tus filtros actuales.")
+                OutlinedButton(onClick = editSearch) { Text("Buscar nuevos trabajos") }
                 if (!s.searching) {
                     s.result.optJSONObject("ocultas")?.let { hidden -> if (hidden.length() > 0) Text("Se ocultaron por: " + hidden.keys().asSequence().joinToString(" · ") { "$it (${hidden.optInt(it)})" }, color = Color(0xFF63748B)) }
                     s.result.optJSONObject("busquedas")?.let { searches -> sources.filter { it.first in s.filters.strings("fuentes") }.forEach { (key, _) -> searches.optJSONObject(key)?.strings("avisos")?.filter { "no pudo" in it || "no permitió" in it || "no devolvió" in it || "incompleta" in it }?.forEach { Text(it, style = MaterialTheme.typography.bodySmall) } } }
@@ -368,89 +352,65 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
         }
     }
     val uri = LocalUriHandler.current
-    var linkError by remember { mutableStateOf("") }
     val context = LocalContext.current
-    val green = Color(0xFF00A43D)
+    var linkError by remember { mutableStateOf("") }
     val ink = Color(0xFF101728)
-    val days = job.number("dias_restantes")
-    val calendarDays = RecommendationEngine.calendarDaysRemaining(job)
-    val deadlineLabel = when {
-        job.text("estado") in listOf("vencida", "cerrada") -> "CONVOCATORIA CERRADA"
-        calendarDays == 0 -> "FINALIZA HOY"
-        calendarDays != null -> "FINALIZA EN $calendarDays DÍAS"
-        else -> "CIERRE POR CONFIRMAR"
-    }
-    Card(Modifier.fillMaxWidth().testTag("job-card"), shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, Color(0xFFE8DCDD))) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Surface(color = if (calendarDays == 0 && job.text("estado") == "en plazo") Color(0xFFFFB800) else if (days != null && days >= 0) green else Color(0xFFEDF1F5), shape = RoundedCornerShape(30.dp), modifier = Modifier.weight(1f, false)) {
-                    Text(deadlineLabel, color = if (days != null && days >= 0) Color.White else ink, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
-                }
-                OutlinedIconButton(onClick = { vm.saveJob(job.text("id")) }, enabled = !busy, shape = RoundedCornerShape(12.dp), modifier = Modifier.semantics { contentDescription = if (job.optBoolean("guardada")) "Quitar de guardadas" else "Guardar oferta" }) {
-                    LineIcon("bookmark", if (job.optBoolean("guardada")) MaterialTheme.colorScheme.primary else ink)
-                }
+    val days = RecommendationEngine.calendarDaysRemaining(job)
+    val closed = job.text("estado") in listOf("vencida", "cerrada")
+    val deadline = when { closed -> "Cerrada"; days == 0 -> "Finaliza hoy"; days != null -> "Cierra en $days días"; else -> "Cierre sin confirmar" }
+    val salary = job.number("salario")?.let { "${if (job.text("moneda") == "PEN") "S/" else job.text("moneda")} ${java.text.DecimalFormat("#,##0.##").format(it)}" } ?: "Sueldo sin indicar"
+    val region = job.text("region").ifBlank { job.text("ubicacion") }.ifBlank { "Ubicación sin indicar" }
+    val contract = types.find { it.first == job.text("tipo") }?.second ?: job.text("tipo")
+    val checks = job.rows("requisitos")
+    val summary = listOf("compatible" to "compatibles", "brecha" to "por revisar", "por confirmar" to "por confirmar").mapNotNull { (key, label) -> checks.count { it.text("estado") == key }.takeIf { it > 0 }?.let { "$it $label" } }.joinToString(" · ")
+    Card(Modifier.fillMaxWidth().testTag("job-card"), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, Color(0xFFE1E5F1))) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(color = when { closed -> Color(0xFFEDF1F5); days == 0 -> Color(0xFFFFE5A1); days != null -> Color(0xFFE6F8EE); else -> Color(0xFFEDF1F5) }, shape = RoundedCornerShape(10.dp)) { Text(deadline, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)) }
+                Spacer(Modifier.weight(1f))
+                if (!job.isNull("puntaje")) Text("${job.optInt("puntaje")}% afinidad", color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                IconButton(onClick = { vm.saveJob(job.text("id")) }, enabled = !busy, modifier = Modifier.semantics { contentDescription = if (job.optBoolean("guardada")) "Quitar de guardadas" else "Guardar oferta" }) { LineIcon("bookmark", if (job.optBoolean("guardada")) MaterialTheme.colorScheme.primary else ink) }
             }
-            val company = job.text("empresa").ifBlank { "Empresa por confirmar" }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Surface(color = Color(0xFFF0F4F8), shape = RoundedCornerShape(12.dp)) { Text(company.split(' ').filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1).uppercase() }, fontWeight = FontWeight.Black, color = Color(0xFF63748B), modifier = Modifier.padding(12.dp)) }
-                Text(company.uppercase(), color = Color(0xFF666365), fontWeight = FontWeight.Bold, fontSize = 13.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+            Text(job.text("empresa").ifBlank { "Empresa sin indicar" }, color = Color(0xFF63748B), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(job.text("titulo"), fontSize = 19.sp, lineHeight = 23.sp, fontWeight = FontWeight.Bold, color = ink, maxLines = if (details) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.clickable { details = !details })
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(region, modifier = Modifier.weight(1f), fontSize = 13.sp, color = Color(0xFF52647C), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(salary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
-            Text(job.text("titulo"), fontSize = 26.sp, lineHeight = 30.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp, color = ink)
-            val formation = job.rows("requisitos").firstOrNull { it.text("nombre") == "Carrera" }?.text("evidencia")?.removePrefix("Formación publicada: ")?.take(220)
-            val academic = formation?.takeIf { it.isNotBlank() } ?: when (job.text("tipo")) { "preprofesional" -> "Estudiantes · revisa las carreras en las bases"; "profesional" -> "Egresados o bachilleres · revisa las bases"; else -> "Formación: consulta los requisitos del anuncio" }
-            InfoLine("people", "", academic)
-            val closing = RecommendationEngine.date(job.text("cierre"), true)?.atZone(RecommendationEngine.lima)?.format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", java.util.Locale.forLanguageTag("es")))
-            InfoLine("calendar", "Vigente hasta: ", closing ?: "Por confirmar")
-            val salary = job.number("salario")?.let { amount -> "${if (job.text("moneda") == "PEN") "S/" else job.text("moneda")} ${java.text.DecimalFormat("#,##0.##").format(amount)}" } ?: "Sin indicar"
-            val region = job.text("region").ifBlank { job.text("ubicacion") }.ifBlank { "Por confirmar" }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                FactTile("Sueldo", salary, Modifier.weight(1f))
-                FactTile("Región", region, Modifier.weight(1f))
+            Text(listOf(contract, job.text("modalidad"), job.text("vacantes").takeIf { it.isNotBlank() }?.let { "$it vacantes" }.orEmpty()).filter { it.isNotBlank() }.joinToString(" · "), color = Color(0xFF63748B), fontSize = 12.sp)
+            if (summary.isNotBlank()) Text(summary, fontSize = 12.sp, color = Color(0xFF52647C))
+            if (job.text("evaluacion") == "Sin descripción") Text("Sin descripción: requisitos pendientes", color = Color(0xFF9E6000), fontSize = 12.sp)
+            if (alternative) Text("Fuera de tus filtros: ${job.strings("excluida_por").joinToString()}", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { details = !details }) { Text(if (details) "Ocultar requisitos" else "Requisitos") }
+                Spacer(Modifier.weight(1f))
+                FilterChip(selected = job.text("valoracion") == "interesa", onClick = { vm.vote(job.text("id"), if (job.text("valoracion") == "interesa") "" else "interesa") }, enabled = !busy, label = { Text("Me interesa") })
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                FactTile("Vacantes", job.text("vacantes").ifBlank { "Sin indicar" }, Modifier.weight(1f))
-                FactTile("Contrato", (types.find { it.first == job.text("tipo") }?.second ?: job.text("tipo")).uppercase(), Modifier.weight(1f))
-            }
-            if (job.text("modalidad").isNotBlank()) Text("Modalidad: ${job.text("modalidad")}", color = MaterialTheme.colorScheme.secondary)
-            if (alternative) Text("Fuera de tus filtros: ${job.strings("excluida_por").joinToString()}", color = MaterialTheme.colorScheme.error)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text((sources.find { it.first == job.text("fuente") }?.second ?: job.text("fuente")) + "\n" + (job.number("antiguedad")?.let { "Publicado hace ${it.toInt()} días" } ?: "Publicación: fecha sin indicar"), style = MaterialTheme.typography.labelSmall, color = Color(0xFF63748B), modifier = Modifier.weight(1f))
-                if (!job.isNull("puntaje")) Text("${job.optInt("puntaje")}% afinidad", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary)
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = { if (job.text("url").startsWith("https://") || job.text("url").startsWith("http://")) linkError = runCatching { uri.openUri(job.text("url")) }.exceptionOrNull()?.let { "No se pudo abrir el anuncio." }.orEmpty() else details = !details }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 14.dp)) { Text("Más información", fontWeight = FontWeight.Bold); Spacer(Modifier.width(6.dp)); LineIcon("arrow", Color.White) }
-                OutlinedButton(onClick = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { if (job.text("url").startsWith("https://") || job.text("url").startsWith("http://")) linkError = runCatching { uri.openUri(job.text("url")) }.exceptionOrNull()?.let { "No se pudo abrir el anuncio." }.orEmpty() else details = !details }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text("Ver anuncio", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                OutlinedIconButton(onClick = {
                     val message = "${job.text("titulo")}\n${job.text("empresa")} · ${job.text("ubicacion")}\n${job.text("url")}"
                     linkError = runCatching { context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, message) }, "Compartir oferta")) }.exceptionOrNull()?.let { "No se pudo compartir." }.orEmpty()
-                }, shape = RoundedCornerShape(16.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 14.dp)) { LineIcon("share", Color(0xFF101728)); Spacer(Modifier.width(6.dp)); Text("Compartir") }
+                }, modifier = Modifier.semantics { contentDescription = "Compartir oferta" }, shape = RoundedCornerShape(12.dp)) { LineIcon("share", ink) }
             }
-            val checks = job.rows("requisitos")
-            if (checks.isNotEmpty()) Text("${checks.count { it.text("estado") == "compatible" }} requisitos compatibles · ${checks.count { it.text("estado") == "brecha" }} por revisar · ${checks.count { it.text("estado") == "por confirmar" }} sin confirmar", style = MaterialTheme.typography.bodySmall, color = Color(0xFF52647C))
-            if (job.text("evaluacion") == "Sin descripción") Text("Sin descripción accesible: requisitos pendientes de evaluar", color = Color(0xFF9E6000), style = MaterialTheme.typography.bodySmall)
-            TextButton(onClick = { details = !details }) { Text(if (details) "Ocultar requisitos" else "Comparar requisitos y preferencias"); Spacer(Modifier.width(6.dp)); Text(if (details) "⌃" else "⌄") }
             AnimatedVisibility(details) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    val closing = RecommendationEngine.date(job.text("cierre"), true)?.atZone(RecommendationEngine.lima)?.format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", java.util.Locale.forLanguageTag("es")))
+                    InfoLine("calendar", "Cierre: ", closing ?: "Por confirmar")
+                    Text(job.number("antiguedad")?.let { "Publicado hace ${it.toInt()} días" } ?: "Fecha de publicación sin indicar", style = MaterialTheme.typography.bodySmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { FactTile("Sueldo", salary, Modifier.weight(1f)); FactTile("Región", region, Modifier.weight(1f)) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { FactTile("Vacantes", job.text("vacantes").ifBlank { "Sin indicar" }, Modifier.weight(1f)); FactTile("Contrato", contract, Modifier.weight(1f)) }
+                    Text((sources.find { it.first == job.text("fuente") }?.second ?: job.text("fuente")), style = MaterialTheme.typography.labelSmall)
                     Text(if (job.isNull("puntaje")) "Completa tu perfil para comparar" else "${job.optInt("puntaje")}/100 · compatibilidad orientativa", fontWeight = FontWeight.Bold)
                     job.strings("razones").forEach { Text("• $it") }
-                    job.rows("requisitos").forEach { check ->
-                        Surface(color = when (check.text("estado")) { "compatible" -> Color(0xFFEAF8EF); "brecha" -> Color(0xFFFFEDEA); else -> Color(0xFFF0F3F7) }, shape = RoundedCornerShape(14.dp)) {
-                            Column(Modifier.padding(12.dp)) { Text("${check.text("nombre")} · ${if (check.optBoolean("obligatorio", true)) "Obligatorio" else "Deseable"} · ${check.text("estado")}", fontWeight = FontWeight.Bold); Text(check.text("evidencia")) }
-                        }
-                    }
+                    checks.forEach { check -> Surface(color = when (check.text("estado")) { "compatible" -> Color(0xFFEAF8EF); "brecha" -> Color(0xFFFFEDEA); else -> Color(0xFFF0F3F7) }, shape = RoundedCornerShape(14.dp)) { Column(Modifier.padding(12.dp)) { Text("${check.text("nombre")} · ${if (check.optBoolean("obligatorio", true)) "Obligatorio" else "Deseable"} · ${check.text("estado")}", fontWeight = FontWeight.Bold); Text(check.text("evidencia")) } } }
                     Text(job.text("aviso"), style = MaterialTheme.typography.bodySmall)
                     Text(description?.ifBlank { "Descripción no proporcionada por la fuente." } ?: "Cargando descripción…")
+                    FilterChip(selected = job.text("valoracion") == "no_interesa", onClick = { vm.vote(job.text("id"), "no_interesa") }, enabled = !busy, label = { Text("No me interesa") })
+                    if (job.text("valoracion").isNotBlank()) TextButton(onClick = { vm.vote(job.text("id"), "") }, enabled = !busy) { Text("Deshacer valoración") }
                 }
             }
             if (linkError.isNotBlank()) Text(linkError)
-            Column {
-            if (job.text("valoracion").isNotBlank()) Text(if (job.text("valoracion") == "interesa") "Marcada: me interesa" else "Marcada: no me interesa")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = job.text("valoracion") == "interesa", onClick = { vm.vote(job.text("id"), "interesa") }, enabled = !busy, label = { Text("Me interesa") })
-                FilterChip(selected = job.text("valoracion") == "no_interesa", onClick = { vm.vote(job.text("id"), "no_interesa") }, enabled = !busy, label = { Text("No me interesa") })
-            }
-            if (job.text("valoracion").isNotBlank()) TextButton(onClick = { vm.vote(job.text("id"), "") }, enabled = !busy) { Text("Deshacer valoración") }
-            }
         }
     }
 }
