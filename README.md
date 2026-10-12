@@ -22,7 +22,7 @@ Inicio carga las recomendaciones guardadas al abrir la app. Buscar contiene úni
 
 | Inicio: recomendaciones | Buscar: filtros |
 | --- | --- |
-| <img src="screenshots/inicio-2.6.0.png" width="280" alt="Inicio con recomendaciones guardadas de ChambaMatch 2.6.0"> | <img src="screenshots/buscar-2.6.0.png" width="280" alt="Búsqueda separada con filtros de país y región"> |
+| <img src="screenshots/inicio-2.7.0.png" width="280" alt="Inicio con recomendaciones guardadas de ChambaMatch 2.7.0"> | <img src="screenshots/buscar-2.6.0.png" width="280" alt="Búsqueda separada con filtros de país y región"> |
 
 Las ofertas de la captura de Inicio son ficticias y se utilizan exclusivamente en pruebas.
 
