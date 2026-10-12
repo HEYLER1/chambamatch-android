@@ -24,7 +24,7 @@ class AndroidFlowTest {
             backup = if (file.exists()) file.readBytes() else null
             if (name.methodName == "cachedOffersAppearOnHomeBeforeOpeningSearch") {
                 val today = java.time.LocalDate.now(java.time.ZoneId.of("America/Lima"))
-                file.writeText(org.json.JSONObject().put("perfil", org.json.JSONObject().put("carrera", "Sistemas").put("habilidades", "Kotlin, SQL, Python").put("situacion", "Estudiante")).put("ofertas", org.json.JSONArray(listOf(
+                file.writeText(org.json.JSONObject().put("perfil", org.json.JSONObject().put("carrera", "Sistemas").put("cargos_objetivo", "Desarrollo Kotlin, Analista de datos junior").put("habilidades", "Kotlin, SQL, Python").put("situacion", "Estudiante")).put("ofertas", org.json.JSONArray(listOf(
                     org.json.JSONObject().put("id", "cached-one").put("fuente", "manual").put("titulo", "Practicante preprofesional de desarrollo Kotlin").put("empresa", "Equipo de prueba").put("descripcion", "Requisitos: Kotlin y SQL.").put("ubicacion", "Lima").put("salario", 1300).put("moneda", "PEN").put("vacantes", 2).put("cierre", today.plusDays(14).toString()),
                     org.json.JSONObject().put("id", "cached-two").put("fuente", "manual").put("titulo", "Analista de datos junior").put("empresa", "Laboratorio de prueba").put("descripcion", "Requisitos: Python y SQL.").put("ubicacion", "Remoto").put("modalidad", "remoto").put("salario", 2600).put("moneda", "PEN").put("cierre", today.plusDays(6).toString())
                 ))).put("feedback", org.json.JSONObject()).put("busquedas", org.json.JSONObject()).toString())
@@ -35,7 +35,7 @@ class AndroidFlowTest {
     @get:Rule val rules: RuleChain = RuleChain.outerRule(name).around(fixture).around(compose)
     @Test fun cachedOffersAppearOnHomeBeforeOpeningSearch() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("app-ready").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Para ti").assertExists()
+        compose.onNodeWithText("Para ti · ≥80%").assertExists()
         compose.onNodeWithText("2 coincidencias").assertExists()
         compose.onNodeWithText("Practicante preprofesional de desarrollo Kotlin").assertIsDisplayed()
         compose.onNodeWithText("Analista de datos junior").assertIsDisplayed()

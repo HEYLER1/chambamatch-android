@@ -4,7 +4,7 @@ La app funciona en Android 8 o posterior **sin computadora, sin servidor y sin P
 
 ## Instalar y usar
 
-Compila o instala el APK de prueba (`apk/ChambaMatch-2.6.0.apk`, o `app/build/outputs/apk/debug/app-debug.apk` después de compilar) y abre **ChambaMatch Perú**. No hay pantalla de conexión ni claves de servidor.
+Compila o instala el APK de prueba (`apk/ChambaMatch-2.7.0.apk`, o `app/build/outputs/apk/debug/app-debug.apk` después de compilar) y abre **ChambaMatch Perú**. No hay pantalla de conexión ni claves de servidor.
 
 Instala la actualización sobre la app existente, sin desinstalar, para conservar tus datos.
 
@@ -102,4 +102,10 @@ Las tarjetas compactas muestran empresa, título, ubicación, sueldo, contrato, 
 
 Este ajuste modifica la presentación y la navegación; conserva el análisis, los países y regiones, el aprendizaje y los datos privados del celular.
 
-Validación de 2.6.0: 47 pruebas unitarias y 14 instrumentadas locales aprobadas, compilación y lint aprobados. APK: `apk/ChambaMatch-2.6.0.apk`. Capturas: `screenshots/inicio-2.6.0.png` y `screenshots/buscar-2.6.0.png`, con datos ficticios de prueba en Inicio. Se mantiene la firma y el identificador para actualizar sin desinstalar.
+Validación de 2.6.0: 47 pruebas unitarias y 14 instrumentadas locales aprobadas, compilación y lint aprobados. APK: `apk/ChambaMatch-2.7.0.apk`. Capturas: `screenshots/inicio-2.6.0.png` y `screenshots/buscar-2.6.0.png`, con datos ficticios de prueba en Inicio. Se mantiene la firma y el identificador para actualizar sin desinstalar.
+
+## Recomendaciones por perfil — 2.7.0
+
+Inicio muestra exclusivamente ofertas con **al menos 80% de afinidad estimada**, descripción disponible y requisitos obligatorios sin brechas ni datos pendientes de confirmar. Se evalúan con el perfil guardado, sin convertir las palabras de una búsqueda en experiencia o habilidades del candidato. No se inflan las puntuaciones para llenar la pantalla. Las ofertas con menor afinidad siguen disponibles en los resultados de Buscar. Las preferencias de país, región y fuentes siguen aplicándose.
+
+Completa Perfil y pulsa **Guardar perfil**: carrera, habilidades, experiencia y preferencias se conservan en el archivo privado del celular y las recomendaciones se recalculan. La prueba de reinicio verifica carrera, habilidades y meses de experiencia. Validación: compilación y lint aprobados, 48 pruebas unitarias y 14 instrumentadas locales aprobadas; consultas optativas de red omitidas.

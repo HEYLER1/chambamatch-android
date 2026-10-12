@@ -38,7 +38,7 @@ class LocalJobsRepository(file: File, private val sources: JobSources = JobSourc
         val saved = data.strings("favoritos").toSet()
         val result = RecommendationEngine.results(data.rows("ofertas").map { it.copyJson().put("guardada", it.text("id") in saved).put("postulacion", data.optJSONObject("seguimiento")?.optJSONObject(it.text("id"))?.text("estado").orEmpty()).put("preparados", data.optJSONObject("seguimiento")?.optJSONObject(it.text("id"))?.optJSONArray("preparados") ?: JSONArray()) }, data.optJSONObject("perfil") ?: JSONObject(), filters, data.optJSONObject("feedback") ?: JSONObject())
         // Descriptions remain on disk. Avoid retaining another full copy in every UI snapshot.
-        (result.rows("ofertas") + result.rows("alternativas") + result.rows("seguimiento")).forEach { it.remove("descripcion") }
+        (result.rows("ofertas") + result.rows("alternativas") + result.rows("seguimiento") + result.rows("recomendaciones")).forEach { it.remove("descripcion") }
         return result.put("perfil", data.optJSONObject("perfil") ?: JSONObject()).put("busquedas", data.optJSONObject("busquedas") ?: JSONObject())
     }
     suspend fun description(id: String): String = withContext(Dispatchers.IO) { mutex.withLock { read().rows("ofertas").firstOrNull { it.text("id") == id }?.text("descripcion").orEmpty() } }

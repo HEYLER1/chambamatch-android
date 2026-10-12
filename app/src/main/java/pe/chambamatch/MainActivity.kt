@@ -95,7 +95,7 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
                 Box(Modifier.weight(1f)) { if (extra == "datos") LocalData(s, vm) else Import(s, vm) }
             } else when (tab) {
                 0 -> Offers(s, vm) { tab = 1 }
-                1 -> Search(s, vm) { tab = 0; vm.search() }
+                1 -> Search(s, vm) { vm.search() }
                 2 -> Tracking(s, vm)
                 3 -> Profile(s, vm) { extra = it }
             }
@@ -212,6 +212,11 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
             Check("Incluir anuncios con datos incompletos", s.filters.optBoolean("desconocidos", true), enabled) { set("desconocidos", it) }
             Check("Mostrar vencidas", s.filters.optBoolean("vencidas"), enabled) { set("vencidas", it) }
         }
+        if (s.result.rows("ofertas").isNotEmpty()) {
+            Text("Resultados de búsqueda · ${s.result.rows("ofertas").size}", fontWeight = FontWeight.Bold)
+            Text("Inicio reúne las ofertas con al menos 80% de afinidad y requisitos confirmados.", style = MaterialTheme.typography.bodySmall)
+            s.result.rows("ofertas").take(12).forEach { job -> key(job.text("id")) { JobCard(job, s.busy, vm) } }
+        }
     }
     Button(onClick = search, enabled = enabled, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).height(54.dp), shape = RoundedCornerShape(16.dp)) { LineIcon("search", Color.White); Spacer(Modifier.width(10.dp)); Text("Buscar trabajos", fontSize = 17.sp, fontWeight = FontWeight.Bold) }
     }
@@ -222,7 +227,7 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     val profile = JSONObject(draft)
     fun set(key: String, value: String) { draft = JSONObject(draft).put(key, value).toString() }
     Form {
-        Text("Mi perfil · 2.6.0", style = MaterialTheme.typography.titleLarge)
+        Text("Mi perfil · 2.7.0", style = MaterialTheme.typography.titleLarge)
         Text("Describe tu experiencia (ej. «Tengo seis meses de experiencia»), o indica tus meses totales. Los requisitos del anuncio se comparan con tu perfil guardado.", style = MaterialTheme.typography.bodySmall)
         listOf("carrera" to "Carrera o especialidad", "cargos_objetivo" to "Cargos que te interesan", "habilidades" to "Habilidades separadas por comas", "meses_experiencia" to "Meses de experiencia (0 si aún no tienes)", "ciclo" to "Ciclo actual", "experiencia" to "Experiencia, idiomas y otros datos").forEach { (key, name) ->
             Field(name, profile.text(key), !s.busy) { if (key !in listOf("meses_experiencia", "ciclo") || it.all(Char::isDigit)) set(key, it) }
@@ -232,6 +237,7 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
         Choice("Situación académica", profile.text("situacion"), listOf("" to "Sin indicar") + listOf("Estudiante", "Egresado", "Bachiller", "Titulado").map { it to it }, !s.busy) { set("situacion", it) }
         Text("La compatibilidad es orientativa. Revisa las bases completas antes de postular. Tus valoraciones ajustan el orden sin cambiar tus filtros.")
         Button(onClick = { vm.saveProfile(JSONObject(draft)) }, enabled = s.ready && !s.busy, modifier = Modifier.fillMaxWidth()) { Text("Guardar perfil") }
+        Text("Guarda el perfil para conservarlo al cerrar la app y recalcular tus recomendaciones.", style = MaterialTheme.typography.bodySmall)
         TextButton(onClick = { more("añadir") }) { Text("Añadir una oferta") }
         TextButton(onClick = { more("datos") }) { Text("Mis datos y copia de seguridad") }
     }
@@ -288,12 +294,12 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     var diagnostics by rememberSaveable { mutableStateOf(false) }
     var alternatives by rememberSaveable { mutableStateOf(false) }
     var shown by remember(s.result) { mutableIntStateOf(40) }
-    val jobs = remember(s.result) { s.result.rows("ofertas") }
+    val jobs = remember(s.result) { s.result.rows("recomendaciones") }
     val otherJobs = remember(s.result) { s.result.rows("alternativas") }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Para ti", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("Para ti · ≥80%", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 Text("${jobs.size} coincidencias", style = MaterialTheme.typography.labelMedium, color = Color(0xFF63748B))
                 TextButton(onClick = { vm.search(refresh = true) }, enabled = s.ready && !s.busy) { Text("Actualizar") }
             }
@@ -303,7 +309,7 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
                 FilterChip(selected = s.filters.optBoolean("solo_guardadas"), onClick = { vm.filters(s.filters.copyJson().put("solo_guardadas", !s.filters.optBoolean("solo_guardadas"))) }, enabled = !s.busy, label = { Text("Guardadas") })
             }
             if (jobs.isEmpty()) {
-                Text(if (s.searching) "Consultando las fuentes… Puedes cancelar sin perder tus ofertas guardadas." else if (s.result.optInt("total") == 0) "Busca trabajos para cargar tus primeras recomendaciones." else "Sin coincidencias con tus filtros actuales.")
+                Text(if (s.searching) "Consultando las fuentes… Puedes cancelar sin perder tus ofertas guardadas." else if (s.result.optInt("total") == 0) "Busca trabajos para cargar tus primeras recomendaciones." else "Ninguna oferta alcanza el 80% con los requisitos confirmados de tu perfil. Puedes revisar otros resultados en Buscar.")
                 OutlinedButton(onClick = editSearch) { Text("Buscar nuevos trabajos") }
                 if (!s.searching) {
                     s.result.optJSONObject("ocultas")?.let { hidden -> if (hidden.length() > 0) Text("Se ocultaron por: " + hidden.keys().asSequence().joinToString(" · ") { "$it (${hidden.optInt(it)})" }, color = Color(0xFF63748B)) }

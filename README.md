@@ -2,9 +2,9 @@
 
 Aplicación autónoma en **Kotlin y Jetpack Compose** para buscar empleos, comparar requisitos con tu experiencia y organizar postulaciones. Funciona en **Android 8 o posterior**, con tu perfil y aprendizaje guardados en el celular.
 
-**Versión 2.6.0 · Android job finder · job matching · employment tracker**
+**Versión 2.7.0 · Android job finder · job matching · employment tracker**
 
-[Descargar APK 2.6.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.6.0.apk) · [Guía completa](docs/GUIA.md) · [Investigación y referencias](REFERENCIAS.md)
+[Descargar APK 2.7.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.7.0.apk) · [Guía completa](docs/GUIA.md) · [Investigación y referencias](REFERENCIAS.md)
 
 ## Qué puedes hacer
 
@@ -28,7 +28,7 @@ Las ofertas de la captura de Inicio son ficticias y se utilizan exclusivamente e
 
 ## Instalar y empezar
 
-1. Descarga la [APK de prueba 2.5.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.6.0.apk) e instálala. Si ya usas ChambaMatch, instala encima **sin desinstalar** para conservar tus datos.
+1. Descarga la [APK de prueba 2.5.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.7.0.apk) e instálala. Si ya usas ChambaMatch, instala encima **sin desinstalar** para conservar tus datos.
 2. En **Perfil**, completa tu información real: carrera, habilidades y experiencia. Puedes escribir una duración clara, como «Tengo seis meses de experiencia», o indicar tus meses totales.
 3. En **Buscar**, selecciona país, región, modalidad, cargo y tipo de oportunidad. Pulsa **Buscar trabajos**.
 4. Revisa en **Inicio** la evidencia de requisitos. **Me interesa** o el marcador incorporan la oferta a **Seguimiento**.
@@ -77,3 +77,9 @@ La versión web anterior está en [peru-job-finder](https://github.com/HEYLER1/p
 ### Validación de 2.6.0
 
 El 12 de octubre de 2026 pasaron **47 pruebas unitarias y 14 instrumentadas locales**, además de compilación y lint en Android 17. La nueva prueba inicia la app con dos ofertas ficticias guardadas y verifica que aparecen en Inicio antes de abrir Buscar, sin realizar consultas de red. También comprueba que los filtros y el botón de búsqueda están en Buscar y que se puede volver a Inicio conservando los resultados. Las cuatro pruebas optativas de red se omitieron.
+
+## Recomendaciones por perfil — 2.7.0
+
+Inicio muestra exclusivamente ofertas con **al menos 80% de afinidad estimada**, descripción disponible y requisitos obligatorios sin brechas ni datos pendientes de confirmar. Se evalúan con el perfil guardado, sin convertir las palabras de una búsqueda en experiencia o habilidades del candidato. No se inflan las puntuaciones para llenar la pantalla. Las ofertas con menor afinidad siguen disponibles en los resultados de Buscar. Las preferencias de país, región y fuentes siguen aplicándose.
+
+Completa Perfil y pulsa **Guardar perfil**: carrera, habilidades, experiencia y preferencias se conservan en el archivo privado del celular y las recomendaciones se recalculan. La prueba de reinicio verifica carrera, habilidades y meses de experiencia. Validación: compilación y lint aprobados, 48 pruebas unitarias y 14 instrumentadas locales aprobadas; consultas optativas de red omitidas.

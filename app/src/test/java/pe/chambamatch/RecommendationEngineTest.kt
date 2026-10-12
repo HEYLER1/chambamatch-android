@@ -11,6 +11,13 @@ class RecommendationEngineTest {
     private fun job(id: String = "a", title: String = "Practicante de sistemas", desc: String = "Estudiante de Ingeniería de Sistemas. Python y SQL.") = JSONObject()
         .put("id", id).put("fuente", "linkedin").put("titulo", title).put("descripcion", desc).put("tipo", "empleo").put("ubicacion", "San Isidro, Peru").put("publicado", JSONObject.NULL).put("cierre", JSONObject.NULL)
     private fun results(jobs: List<JSONObject> = listOf(job()), profile: JSONObject = JSONObject(), prefs: JSONObject = defaultFilters(), feedback: JSONObject = JSONObject()) = RecommendationEngine.results(jobs, profile, prefs, feedback, now)
+    @Test fun homeUsesSavedProfileInsteadOfSearchWordsAndEnforcesEightyPercent() {
+        val candidate = job(title = "Developer Python", desc = "Requisitos: Python obligatorio.")
+        val profile = JSONObject().put("habilidades", "Python").put("cargos_objetivo", "Developer Python")
+        assertEquals(1, results(listOf(candidate), profile).rows("recomendaciones").size)
+        assertTrue(results(listOf(candidate), JSONObject(), defaultFilters().put("cargo", "Developer Python")).rows("recomendaciones").isEmpty())
+        assertTrue(results(listOf(candidate), JSONObject().put("habilidades", "Python")).rows("recomendaciones").isEmpty())
+    }
     @Test fun applicationDatesAreNotApplicantRequirementsAndChangedEvidenceGetsNewChecklistKey() {
         val candidate = job(desc = "Requisitos:\nPython obligatorio.\nPlazo para postular: 19 de octubre de 2026")
         val profile = JSONObject().put("habilidades", "Python")
