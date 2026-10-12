@@ -11,12 +11,29 @@ class RecommendationEngineTest {
     private fun job(id: String = "a", title: String = "Practicante de sistemas", desc: String = "Estudiante de Ingeniería de Sistemas. Python y SQL.") = JSONObject()
         .put("id", id).put("fuente", "linkedin").put("titulo", title).put("descripcion", desc).put("tipo", "empleo").put("ubicacion", "San Isidro, Peru").put("publicado", JSONObject.NULL).put("cierre", JSONObject.NULL)
     private fun results(jobs: List<JSONObject> = listOf(job()), profile: JSONObject = JSONObject(), prefs: JSONObject = defaultFilters(), feedback: JSONObject = JSONObject()) = RecommendationEngine.results(jobs, profile, prefs, feedback, now)
-    @Test fun homeUsesSavedProfileInsteadOfSearchWordsAndEnforcesEightyPercent() {
+    @Test fun homeRecommendsSimilarJobsWithoutEightyPercentCutoff() {
         val candidate = job(title = "Developer Python", desc = "Requisitos: Python obligatorio.")
         val profile = JSONObject().put("habilidades", "Python").put("cargos_objetivo", "Developer Python")
         assertEquals(1, results(listOf(candidate), profile).rows("recomendaciones").size)
         assertTrue(results(listOf(candidate), JSONObject(), defaultFilters().put("cargo", "Developer Python")).rows("recomendaciones").isEmpty())
-        assertTrue(results(listOf(candidate), JSONObject().put("habilidades", "Python")).rows("recomendaciones").isEmpty())
+        assertEquals(1, results(listOf(candidate), JSONObject().put("habilidades", "Python")).rows("recomendaciones").size)
+    }
+    @Test fun closestCareerRanksBeforeIncidentalSkillsEvenWithAnExperienceGap() {
+        val profile = JSONObject().put("habilidades", "Python, SQL").put("cargos_objetivo", "Developer Python").put("meses_experiencia", "0")
+        val close = job("a", "Developer Python", "Requisitos: Python obligatorio. Experiencia general de 2 años.")
+        val loose = job("b", "Analista de datos", "Requisitos: SQL obligatorio.")
+        val ranked = results(listOf(loose, close), profile).rows("recomendaciones")
+        assertEquals(listOf("a", "b"), ranked.map { it.text("id") })
+        assertTrue(ranked.first().optInt("puntaje") < ranked.last().optInt("puntaje"))
+    }
+    @Test fun similarOffersWithGapsRemainVisibleButUnrelatedAndExpiredDoNot() {
+        val profile = JSONObject().put("habilidades", "Python").put("meses_experiencia", "0")
+        val related = job("a", "Developer Python", "Requisitos: Python. Experiencia general de 2 años.")
+        val unrelated = job("b", "Contador", "Requisitos: Contabilidad.")
+        val expired = related.copyJson().put("id", "c").put("cierre", "2020-01-01")
+        val list = results(listOf(related, unrelated, expired), profile).rows("recomendaciones")
+        assertEquals(listOf("a"), list.map { it.text("id") })
+        assertTrue(list.single().rows("requisitos").any { it.text("estado") == "brecha" })
     }
     @Test fun applicationDatesAreNotApplicantRequirementsAndChangedEvidenceGetsNewChecklistKey() {
         val candidate = job(desc = "Requisitos:\nPython obligatorio.\nPlazo para postular: 19 de octubre de 2026")

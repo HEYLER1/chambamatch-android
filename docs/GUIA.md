@@ -4,7 +4,7 @@ La app funciona en Android 8 o posterior **sin computadora, sin servidor y sin P
 
 ## Instalar y usar
 
-Compila o instala el APK de prueba (`apk/ChambaMatch-2.7.0.apk`, o `app/build/outputs/apk/debug/app-debug.apk` después de compilar) y abre **ChambaMatch Perú**. No hay pantalla de conexión ni claves de servidor.
+Compila o instala el APK de prueba (`apk/ChambaMatch-2.8.0.apk`, o `app/build/outputs/apk/debug/app-debug.apk` después de compilar) y abre **ChambaMatch Perú**. No hay pantalla de conexión ni claves de servidor.
 
 Instala la actualización sobre la app existente, sin desinstalar, para conservar tus datos.
 
@@ -109,3 +109,13 @@ Validación de 2.6.0: 47 pruebas unitarias y 14 instrumentadas locales aprobadas
 Inicio muestra exclusivamente ofertas con **al menos 80% de afinidad estimada**, descripción disponible y requisitos obligatorios sin brechas ni datos pendientes de confirmar. Se evalúan con el perfil guardado, sin convertir las palabras de una búsqueda en experiencia o habilidades del candidato. No se inflan las puntuaciones para llenar la pantalla. Las ofertas con menor afinidad siguen disponibles en los resultados de Buscar. Las preferencias de país, región y fuentes siguen aplicándose.
 
 Completa Perfil y pulsa **Guardar perfil**: carrera, habilidades, experiencia y preferencias se conservan en el archivo privado del celular y las recomendaciones se recalculan. La prueba de reinicio verifica carrera, habilidades y meses de experiencia. Validación: compilación y lint aprobados, 48 pruebas unitarias y 14 instrumentadas locales aprobadas; consultas optativas de red omitidas.
+
+## Cambios de 2.8.0
+
+Se retira el umbral de 80% de 2.7.0. Inicio ordena las ofertas semejantes al perfil aunque necesiten confirmar requisitos o exista una brecha, siempre indicada en la tarjeta. No se convierten las palabras de búsqueda en habilidades del candidato.
+
+Inicio no tiene cabecera, contadores, filtros ni botón Actualizar. Desliza hacia abajo para consultar anuncios mediante tu perfil, sin sustituir los filtros guardados de Buscar. El desplazamiento carga más tarjetas automáticamente. Los detalles y avisos de cada fuente se encuentran en las opciones de Buscar.
+
+El arranque prepara todos los datos locales antes de mostrar la lista. Si faltan ofertas relacionadas y existe un perfil, consulta las fuentes durante un máximo de 12 segundos. No bloquea indefinidamente el inicio sin conexión y no rellena la lista con anuncios ficticios. El perfil y el seguimiento mantienen su almacenamiento privado.
+
+Validación final de 2.8.0: compilación, lint, **50 pruebas unitarias y 16 instrumentadas locales aprobadas** en Android 17. Se verificó el gesto de deslizar para recargar, la ausencia de cabeceras y botón Actualizar, la carga de ofertas guardadas, las recomendaciones sin umbral de 80%, el orden por semejanza independiente del cumplimiento de experiencia y la conservación de las preferencias de búsqueda. Las cuatro pruebas optativas de red se omitieron. La captura de Inicio contiene ofertas ficticias utilizadas exclusivamente en pruebas.

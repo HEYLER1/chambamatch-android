@@ -28,12 +28,20 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         // Removes unused credentials from the former server-dependent version.
         application.getSharedPreferences("connection", 0).edit().clear().apply()
         task {
-            val countries = WorldLocations.load(application)
-            val result = repository.load(); accept(result, true)
-            val filters = WorldLocations.migrate(countries, mutable.value.filters)
-            accept(repository.filter(filters))
-            mutable.update { it.copy(countries = countries, filters = filters) }
-            mutable.value = mutable.value.copy(ready = true, message = "Lista. Tu perfil y tus anuncios se guardan en este celular.")
+            try {
+                val countries = WorldLocations.load(application)
+                val result = repository.load(); accept(result, true)
+                val filters = WorldLocations.migrate(countries, mutable.value.filters)
+                accept(repository.filter(filters))
+                mutable.update { it.copy(countries = countries, filters = filters) }
+                if (hasProfile() && mutable.value.result.rows("recomendaciones").isEmpty()) {
+                    withTimeoutOrNull(12_000) {
+                        repository.search(homeQuery(), persistPreferences = false, onSource = { accept(it) }) { }
+                    }
+                    accept(repository.filter(filters))
+                }
+                mutable.update { it.copy(message = "Lista. Tu perfil y tus anuncios se guardan en este celular.") }
+            } finally { mutable.update { it.copy(ready = true) } }
         }
     }
     private fun accept(result: JSONObject, preferences: Boolean = false) {
@@ -82,6 +90,18 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         }) { message -> if (run == generation) mutable.update { it.copy(message = message) } }
         accept(result)
         mutable.update { it.copy(message = "${result.rows("ofertas").size} coincidencias · ${result.optInt("cantidad")} anuncios revisados. Tus filtros se guardaron.") }
+    }
+    private fun hasProfile(): Boolean = listOf("carrera", "habilidades", "cargos_objetivo").any { mutable.value.profile.text(it).isNotBlank() }
+    private fun homeQuery(): JSONObject = mutable.value.filters.copyJson().apply {
+        val profile = mutable.value.profile
+        put("cargo", profile.text("cargos_objetivo").ifBlank { profile.text("carrera") }.ifBlank { profile.text("habilidades").split(',').take(2).joinToString(" ") })
+        put("ajustar_perfil", false); put("requisitos_confirmados", false)
+    }
+    fun refreshHome() = task(searching = true) {
+        if (!hasProfile()) { accept(repository.filter(mutable.value.filters)); mutable.update { it.copy(message = "Completa y guarda tu perfil para personalizar las ofertas.") }; return@task }
+        val result = repository.search(homeQuery(), refresh = true, persistPreferences = false, onSource = { accept(it) }) { }
+        accept(repository.filter(mutable.value.filters))
+        mutable.update { it.copy(message = if (result.optInt("cantidad") == 0) "No se recibieron anuncios nuevos. Las ofertas guardadas se conservaron." else "Recomendaciones actualizadas según tu perfil.") }
     }
     fun saveProfile(profile: JSONObject) = task {
         accept(repository.saveProfile(profile, mutable.value.filters)); mutable.value = mutable.value.copy(message = "Perfil y preferencias guardados en este celular.")

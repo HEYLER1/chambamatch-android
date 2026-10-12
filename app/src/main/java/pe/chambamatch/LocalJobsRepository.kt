@@ -97,6 +97,7 @@ class LocalJobsRepository(file: File, private val sources: JobSources = JobSourc
     suspend fun search(
         filters: JSONObject,
         refresh: Boolean = false,
+        persistPreferences: Boolean = true,
         onSource: suspend (JSONObject) -> Unit = {},
         progress: (String) -> Unit
     ): JSONObject {
@@ -137,7 +138,7 @@ class LocalJobsRepository(file: File, private val sources: JobSources = JobSourc
                     }
                     data.put("ofertas", JSONArray(jobs.values.toList()))
                     val savedProfile = data.optJSONObject("perfil") ?: JSONObject().also { data.put("perfil", it) }
-                    savedProfile.put("preferencias", filters.copyJson())
+                    if (persistPreferences) savedProfile.put("preferencias", filters.copyJson())
                 }
                 onSource(snapshot)
                 progress("${JobSources.name(source)}: ${sourceResult.jobs.size} anuncios recibidos. Puedes ver los resultados mientras continúa la búsqueda.")

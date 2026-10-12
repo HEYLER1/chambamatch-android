@@ -13,6 +13,17 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 class LocalRepositoryTest {
     private fun file() = File.createTempFile("chambamatch-test-", ".json", InstrumentationRegistry.getInstrumentation().targetContext.cacheDir).apply { delete() }
+    @Test fun homeRefreshDoesNotOverwriteSavedSearchPreferences() = runBlocking {
+        val data = file()
+        try {
+            val sources = JobSources { url -> Jsoup.parse("", url) }
+            val repository = LocalJobsRepository(data, sources)
+            val prefs = defaultFilters().put("cargo", "mi búsqueda anterior")
+            repository.saveProfile(JSONObject().put("habilidades", "Python"), prefs)
+            repository.search(prefs.copyJson().put("cargo", "Python"), persistPreferences = false) { }
+            assertEquals("mi búsqueda anterior", repository.load().getJSONObject("perfil").getJSONObject("preferencias").text("cargo"))
+        } finally { data.delete() }
+    }
     @Test fun likedAgendaPersistsStateChecklistAndBackupAcrossFilters() = runBlocking {
         val a = file(); val b = file()
         try {

@@ -35,8 +35,10 @@ class AndroidFlowTest {
     @get:Rule val rules: RuleChain = RuleChain.outerRule(name).around(fixture).around(compose)
     @Test fun cachedOffersAppearOnHomeBeforeOpeningSearch() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("app-ready").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Para ti · ≥80%").assertExists()
-        compose.onNodeWithText("2 coincidencias").assertExists()
+        compose.onNodeWithText("Para ti · ≥80%").assertDoesNotExist()
+        compose.onNodeWithText("ChambaMatch").assertDoesNotExist()
+        compose.onNodeWithText("Actualizar").assertDoesNotExist()
+        compose.onAllNodesWithTag("job-card").assertCountEquals(2)
         compose.onNodeWithText("Practicante preprofesional de desarrollo Kotlin").assertIsDisplayed()
         compose.onNodeWithText("Analista de datos junior").assertIsDisplayed()
         compose.onNodeWithText("Cargo o palabras clave").assertDoesNotExist()
@@ -47,7 +49,13 @@ class AndroidFlowTest {
         compose.onNodeWithText("Buscar trabajos").assertIsDisplayed()
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("screencap -p /data/local/tmp/chamba-search-preview.png").use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }
         compose.onNodeWithText("Inicio").performClick()
-        compose.onNodeWithText("2 coincidencias").assertExists()
+        compose.onAllNodesWithTag("job-card").assertCountEquals(2)
+    }
+    @Test fun pullDownReloadsHomeWithoutAnUpdateButton() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("app-ready").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Actualizar").assertDoesNotExist()
+        compose.onNodeWithTag("home-refresh").performTouchInput { swipeDown(startY = height * .1f, endY = height * .8f, durationMillis = 500) }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Completa y guarda tu perfil para personalizar las ofertas.").fetchSemanticsNodes().isNotEmpty() }
     }
     @Test fun profileImportFilterAndLearnWithoutServer() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("app-ready").fetchSemanticsNodes().isNotEmpty() }
@@ -77,7 +85,7 @@ class AndroidFlowTest {
         compose.waitForIdle()
         Thread.sleep(650)
         compose.onNodeWithText("Inicio").performClick()
-        compose.onNodeWithText("1 coincidencias").assertExists()
+        compose.onAllNodesWithTag("job-card").assertCountEquals(1)
         compose.onNodeWithText("Oferta de prueba: desarrollador").assertExists()
         compose.onNodeWithTag("job-card").performScrollTo()
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("screencap -p /data/local/tmp/chamba-card-preview.png").use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }

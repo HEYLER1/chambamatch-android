@@ -36,6 +36,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -79,13 +80,27 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     }
     LaunchedEffect(s.ready) { if (s.ready) while (true) { kotlinx.coroutines.delay(60_000); vm.refreshTracking() } }
     var extra by rememberSaveable { mutableStateOf("") }
+    val notices = remember { SnackbarHostState() }
+    LaunchedEffect(s.message, s.busy, s.ready) {
+        if (tab == 0 && s.ready && !s.busy && s.message !in listOf("Lista. Tu perfil y tus anuncios se guardan en este celular.", "Cargando tus datos del celular…")) notices.showSnackbar(s.message)
+    }
+    LaunchedEffect(tab) { if (tab != 0) notices.currentSnackbarData?.dismiss() }
+    if (!s.ready) {
+        Box(Modifier.fillMaxSize().testTag("app-loading"), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                Surface(color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(20.dp)) { Text("CM", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(24.dp)) }
+                CircularProgressIndicator(Modifier.size(26.dp).semantics { contentDescription = "Preparando tus recomendaciones" }, strokeWidth = 2.dp)
+            }
+        }
+        return
+    }
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().testTag(if (s.ready) "app-ready" else "app-loading")) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (tab != 0 || extra.isNotBlank()) Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Surface(color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(10.dp)) { Text("CM", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(8.dp)) }
             Text("ChambaMatch", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
         }
-        if (s.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-        if (s.message !in listOf("Lista. Tu perfil y tus anuncios se guardan en este celular.", "Cargando tus datos del celular…")) Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (s.busy && tab != 0) LinearProgressIndicator(Modifier.fillMaxWidth())
+        if (tab != 0 && s.message !in listOf("Lista. Tu perfil y tus anuncios se guardan en este celular.", "Cargando tus datos del celular…")) Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(s.message, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(vertical = 2.dp))
             if (s.searching) TextButton(onClick = vm::cancelSearch) { Text("Cancelar") }
         }
@@ -94,11 +109,12 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
                 TextButton(onClick = { extra = "" }) { Text("Volver al perfil") }
                 Box(Modifier.weight(1f)) { if (extra == "datos") LocalData(s, vm) else Import(s, vm) }
             } else when (tab) {
-                0 -> Offers(s, vm) { tab = 1 }
+                0 -> Offers(s, vm) { tab = if (listOf("carrera", "habilidades", "cargos_objetivo").all { s.profile.text(it).isBlank() }) 3 else 1 }
                 1 -> Search(s, vm) { vm.search() }
                 2 -> Tracking(s, vm)
                 3 -> Profile(s, vm) { extra = it }
             }
+            if (tab == 0) SnackbarHost(notices, Modifier.align(Alignment.BottomCenter))
         }
         NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
             listOf("Inicio", "Buscar", "Seguimiento", "Perfil").forEachIndexed { i, label ->
@@ -211,10 +227,11 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
             Check("Incluir fechas desconocidas", s.filters.optBoolean("sinfecha", true), enabled) { set("sinfecha", it) }
             Check("Incluir anuncios con datos incompletos", s.filters.optBoolean("desconocidos", true), enabled) { set("desconocidos", it) }
             Check("Mostrar vencidas", s.filters.optBoolean("vencidas"), enabled) { set("vencidas", it) }
+            s.result.optJSONObject("busquedas")?.let { searches -> sources.filter { it.first in s.filters.strings("fuentes") }.forEach { (key, label) -> searches.optJSONObject(key)?.let { status -> Text(label, fontWeight = FontWeight.Bold); status.strings("avisos").forEach { Text(it, style = MaterialTheme.typography.bodySmall) } } } }
         }
         if (s.result.rows("ofertas").isNotEmpty()) {
             Text("Resultados de búsqueda · ${s.result.rows("ofertas").size}", fontWeight = FontWeight.Bold)
-            Text("Inicio reúne las ofertas con al menos 80% de afinidad y requisitos confirmados.", style = MaterialTheme.typography.bodySmall)
+            Text("Inicio ordena las ofertas semejantes a tu perfil; revisa sus requisitos antes de postular.", style = MaterialTheme.typography.bodySmall)
             s.result.rows("ofertas").take(12).forEach { job -> key(job.text("id")) { JobCard(job, s.busy, vm) } }
         }
     }
@@ -227,7 +244,7 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     val profile = JSONObject(draft)
     fun set(key: String, value: String) { draft = JSONObject(draft).put(key, value).toString() }
     Form {
-        Text("Mi perfil · 2.7.0", style = MaterialTheme.typography.titleLarge)
+        Text("Mi perfil · 2.8.0", style = MaterialTheme.typography.titleLarge)
         Text("Describe tu experiencia (ej. «Tengo seis meses de experiencia»), o indica tus meses totales. Los requisitos del anuncio se comparan con tu perfil guardado.", style = MaterialTheme.typography.bodySmall)
         listOf("carrera" to "Carrera o especialidad", "cargos_objetivo" to "Cargos que te interesan", "habilidades" to "Habilidades separadas por comas", "meses_experiencia" to "Meses de experiencia (0 si aún no tienes)", "ciclo" to "Ciclo actual", "experiencia" to "Experiencia, idiomas y otros datos").forEach { (key, name) ->
             Field(name, profile.text(key), !s.busy) { if (key !in listOf("meses_experiencia", "ciclo") || it.all(Char::isDigit)) set(key, it) }
@@ -290,60 +307,21 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
         }
     }
 }
-@Composable private fun Offers(s: JobsState, vm: JobsViewModel, editSearch: () -> Unit) {
-    var diagnostics by rememberSaveable { mutableStateOf(false) }
-    var alternatives by rememberSaveable { mutableStateOf(false) }
-    var shown by remember(s.result) { mutableIntStateOf(40) }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable private fun Offers(s: JobsState, vm: JobsViewModel, emptyAction: () -> Unit) {
+    var shown by rememberSaveable { mutableIntStateOf(40) }
     val jobs = remember(s.result) { s.result.rows("recomendaciones") }
-    val otherJobs = remember(s.result) { s.result.rows("alternativas") }
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Para ti · ≥80%", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                Text("${jobs.size} coincidencias", style = MaterialTheme.typography.labelMedium, color = Color(0xFF63748B))
-                TextButton(onClick = { vm.search(refresh = true) }, enabled = s.ready && !s.busy) { Text("Actualizar") }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(WorldLocations.selected(s.countries, s.filters)?.label ?: "Todo el mundo", style = MaterialTheme.typography.labelMedium, color = Color(0xFF63748B))
-                if (s.filters.text("ubicacion").isNotBlank()) Text(s.filters.text("ubicacion"), style = MaterialTheme.typography.labelMedium, color = Color(0xFF63748B), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                FilterChip(selected = s.filters.optBoolean("solo_guardadas"), onClick = { vm.filters(s.filters.copyJson().put("solo_guardadas", !s.filters.optBoolean("solo_guardadas"))) }, enabled = !s.busy, label = { Text("Guardadas") })
-            }
-            if (jobs.isEmpty()) {
-                Text(if (s.searching) "Consultando las fuentes… Puedes cancelar sin perder tus ofertas guardadas." else if (s.result.optInt("total") == 0) "Busca trabajos para cargar tus primeras recomendaciones." else "Ninguna oferta alcanza el 80% con los requisitos confirmados de tu perfil. Puedes revisar otros resultados en Buscar.")
-                OutlinedButton(onClick = editSearch) { Text("Buscar nuevos trabajos") }
-                if (!s.searching) {
-                    s.result.optJSONObject("ocultas")?.let { hidden -> if (hidden.length() > 0) Text("Se ocultaron por: " + hidden.keys().asSequence().joinToString(" · ") { "$it (${hidden.optInt(it)})" }, color = Color(0xFF63748B)) }
-                    s.result.optJSONObject("busquedas")?.let { searches -> sources.filter { it.first in s.filters.strings("fuentes") }.forEach { (key, _) -> searches.optJSONObject(key)?.strings("avisos")?.filter { "no pudo" in it || "no permitió" in it || "no devolvió" in it || "incompleta" in it }?.forEach { Text(it, style = MaterialTheme.typography.bodySmall) } } }
+    val listState = rememberLazyListState()
+    val last by remember { derivedStateOf { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 } }
+    LaunchedEffect(last, shown, jobs.size) { if (last >= shown - 5 && shown < jobs.size) shown += 40 }
+    PullToRefreshBox(isRefreshing = s.searching, onRefresh = vm::refreshHome, modifier = Modifier.fillMaxSize().testTag("home-refresh")) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().testTag("home-feed"), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (jobs.isEmpty()) item {
+                Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                    OutlinedIconButton(onClick = emptyAction, modifier = Modifier.size(64.dp).semantics { contentDescription = if (listOf("carrera", "habilidades", "cargos_objetivo").all { s.profile.text(it).isBlank() }) "Completar perfil para ver recomendaciones" else "Buscar ofertas para tu perfil" }, shape = RoundedCornerShape(20.dp)) { LineIcon(if (listOf("carrera", "habilidades", "cargos_objetivo").all { s.profile.text(it).isBlank() }) "people" else "search") }
                 }
             }
-        }
-        items(jobs.take(shown), key = { "visible:${it.text("id")}" }) { JobCard(it, s.busy, vm) }
-        if (jobs.size > shown) item { OutlinedButton(onClick = { shown += 40 }) { Text("Mostrar más ofertas") } }
-        item {
-            TextButton(onClick = { diagnostics = !diagnostics }) { Text(if (diagnostics) "Ocultar estado de fuentes" else "Estado de fuentes y filtros") }
-            if (diagnostics) {
-                s.result.optJSONObject("fuentes")?.let { counts -> sources.forEach { (key, name) -> counts.optJSONObject(key)?.let { Text("$name: ${it.optInt("visibles")} visibles / ${it.optInt("guardadas")} guardadas") } } }
-                s.result.optJSONObject("ocultas")?.let { hidden -> if (hidden.length() > 0) Text("Ocultas por tus filtros: " + hidden.keys().asSequence().joinToString(" · ") { "$it: ${hidden.optInt(it)}" }) }
-                val searches = s.result.optJSONObject("busquedas")
-                sources.filter { it.first != "manual" }.forEach { (key, name) -> searches?.optJSONObject(key)?.let { search ->
-                    Text(name, fontWeight = FontWeight.Bold)
-                    search.strings("avisos").forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
-                } }
-                val uri = LocalUriHandler.current
-                var openError by remember { mutableStateOf(false) }
-                OutlinedButton(onClick = {
-                    val query = s.filters.text("cargo").ifBlank { s.profile.text("cargos_objetivo").ifBlank { s.profile.text("carrera") } }
-                    val location = searchPlace(s.filters.text("ubicacion"), searchCountry(s.filters))
-                    val link = "https://www.linkedin.com/jobs/search/?keywords=${URLEncoder.encode(query, "UTF-8")}&location=${URLEncoder.encode(location, "UTF-8")}" + if (s.filters.text("tipo") in listOf("practicas", "preprofesional", "profesional")) "&f_JT=I" else ""
-                    val remote = if (s.filters.text("modalidad") == "remoto") "&f_WT=2" else ""
-                    openError = runCatching { uri.openUri(link + remote) }.isFailure
-                }) { Text("Buscar directamente en LinkedIn") }
-                if (openError) Text("No se pudo abrir el navegador.")
-            }
-        }
-        if (otherJobs.isNotEmpty()) {
-            item { TextButton(onClick = { alternatives = !alternatives }) { Text(if (alternatives) "Ocultar alternativas" else "Alternativas fuera de tus filtros") } }
-            if (alternatives) items(otherJobs, key = { "alternative:${it.text("id")}" }) { JobCard(it, s.busy, vm, true) }
+            items(jobs.take(shown), key = { "home:${it.text("id")}" }) { JobCard(it, s.busy, vm) }
         }
     }
 }
@@ -374,7 +352,6 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(color = when { closed -> Color(0xFFEDF1F5); days == 0 -> Color(0xFFFFE5A1); days != null -> Color(0xFFE6F8EE); else -> Color(0xFFEDF1F5) }, shape = RoundedCornerShape(10.dp)) { Text(deadline, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)) }
                 Spacer(Modifier.weight(1f))
-                if (!job.isNull("puntaje")) Text("${job.optInt("puntaje")}% afinidad", color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 IconButton(onClick = { vm.saveJob(job.text("id")) }, enabled = !busy, modifier = Modifier.semantics { contentDescription = if (job.optBoolean("guardada")) "Quitar de guardadas" else "Guardar oferta" }) { LineIcon("bookmark", if (job.optBoolean("guardada")) MaterialTheme.colorScheme.primary else ink) }
             }
             Text(job.text("empresa").ifBlank { "Empresa sin indicar" }, color = Color(0xFF63748B), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)

@@ -217,11 +217,19 @@ object RecommendationEngine {
         val model = train(jobs, feedback); val visible = mutableListOf<JSONObject>(); val excluded = mutableListOf<JSONObject>()
         val counts = mutableMapOf<String, Int>(); val sources = JSONObject(); val tracking = mutableListOf<JSONObject>(); val recommendations = mutableListOf<JSONObject>()
         val effective = profile.copyJson().apply { if (text("cargos_objetivo").isBlank()) put("cargos_objetivo", prefs.text("cargo")) }
+        val homePrefs = prefs.copyJson().apply { remove("cargo"); put("ajustar_perfil", false); put("requisitos_confirmados", false); put("vencidas", false) }
+        val goals = listOf("carrera", "cargos_objetivo").joinToString(" ") { profile.text(it) }
+        val goalMatcher = Matcher(goals)
+        val profileSkills = profile.text("habilidades").split(',').count { it.isNotBlank() }
         for (raw in jobs.distinctBy { it.text("id") }) {
             val job = recommend(evaluate(normalize(raw), now), effective, model).put("valoracion", feedback.text(raw.text("id")))
             val home = recommend(evaluate(normalize(raw), now), profile, model).put("valoracion", feedback.text(raw.text("id")))
-            val homePrefs = prefs.copyJson().apply { remove("cargo"); put("ajustar_perfil", true); put("requisitos_confirmados", true); put("vencidas", false) }
-            if (listOf("carrera", "habilidades", "cargos_objetivo", "experiencia").any { profile.text(it).isNotBlank() } && home.number("puntaje")?.let { it >= 80 } == true && home.text("descripcion").isNotBlank() && home.rows("requisitos").isNotEmpty() && exclusions(home, homePrefs).isEmpty()) recommendations.add(home)
+            val goalMatch = goalMatcher.relevance(home)
+            val skillMatch = if (profileSkills == 0) 0.0 else home.strings("coincidencias").size.toDouble() / profileSkills
+            val similarity = (if (goals.isBlank()) skillMatch else goalMatch * .7 + skillMatch * .3) + (home.number("aprendizaje") ?: 0.0) / 1000
+            home.put("semejanza", similarity.coerceIn(0.0, 1.0))
+            val similar = goalMatch > 0 || home.strings("coincidencias").isNotEmpty()
+            if (similar && exclusions(home, homePrefs).isEmpty()) recommendations.add(home)
             val reasons = exclusions(job, prefs); job.put("excluida_por", JSONArray(reasons))
             if (job.optBoolean("guardada") || job.text("valoracion") == "interesa" || job.text("postulacion").isNotBlank()) tracking.add(job)
             val source = job.text("fuente"); val count = sources.optJSONObject(source) ?: JSONObject().put("guardadas", 0).put("visibles", 0).also { sources.put(source, it) }
@@ -231,7 +239,7 @@ object RecommendationEngine {
         }
         fun rank(job: JSONObject) = when (prefs.text("orden")) { "recientes" -> -(job.number("antiguedad") ?: 1e9); "cierre" -> -(job.number("dias_restantes") ?: 1e9); else -> job.number("puntaje") ?: -1.0 }
         return JSONObject().put("ofertas", JSONArray(visible.sortedByDescending(::rank))).put("alternativas", JSONArray(excluded.filter { "fuente" !in it.strings("excluida_por") && "vigencia" !in it.strings("excluida_por") }.sortedByDescending(::rank).take(8)))
-            .put("recomendaciones", JSONArray(recommendations.sortedByDescending { it.number("puntaje") ?: -1.0 }))
+            .put("recomendaciones", JSONArray(recommendations.sortedWith(compareByDescending<JSONObject> { it.number("semejanza") ?: 0.0 }.thenByDescending { it.number("puntaje") ?: -1.0 })))
             .put("seguimiento", JSONArray(tracking.sortedWith(compareBy<JSONObject> { it.text("estado") in listOf("vencida", "cerrada") }.thenBy { date(it.text("cierre"), true) ?: Instant.MAX })))
             .put("total", jobs.size).put("ocultas", JSONObject(counts as Map<*, *>)).put("fuentes", sources).put("valoraciones", model.count)
     }
