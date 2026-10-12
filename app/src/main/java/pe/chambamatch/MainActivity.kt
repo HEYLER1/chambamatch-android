@@ -36,7 +36,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -95,10 +101,6 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
         return
     }
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().testTag(if (s.ready) "app-ready" else "app-loading")) {
-        if (tab != 0 || extra.isNotBlank()) Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Surface(color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(10.dp)) { Text("CM", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(8.dp)) }
-            Text("ChambaMatch", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
-        }
         if (s.busy && tab != 0) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (tab != 0 && s.message !in listOf("Lista. Tu perfil y tus anuncios se guardan en este celular.", "Cargando tus datos del celular…")) Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(s.message, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(vertical = 2.dp))
@@ -181,14 +183,11 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri -> if (uri != null) vm.export(uri) }
     val restore = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> pending = uri }
     Form {
-        Text("Todo queda en tu celular", style = MaterialTheme.typography.titleLarge)
-        Text("Perfil, filtros, anuncios y valoraciones se guardan en Android. Las recomendaciones se calculan aquí. No necesitas una computadora, un servidor ni una cuenta de ChambaMatch.")
-        Text("Internet se usa al buscar nuevos anuncios o abrir sus enlaces. Tu perfil y tus valoraciones no se envían a los portales; las consultas contienen el cargo y la ubicación de búsqueda.")
-        Text("Al desinstalar la app se borran los datos locales. Guarda una copia si deseas conservarlos o trasladarlos a otro celular.")
-        Button(onClick = { export.launch("chambamatch-copia.json") }, enabled = s.ready && !s.busy) { Text("Guardar copia de mis datos") }
-        OutlinedButton(onClick = { restore.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) }, enabled = !s.busy) { Text("Restaurar una copia") }
+        Text("Mis datos", style = MaterialTheme.typography.titleLarge)
+        Text("Desinstalar borra tus datos. Guarda una copia.")
+        Button(onClick = { export.launch("chambamatch-copia.json") }, enabled = s.ready && !s.busy) { Text("Guardar copia") }
+        OutlinedButton(onClick = { restore.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) }, enabled = !s.busy) { Text("Restaurar copia") }
         Text("Datos de países y regiones: Countries States Cities Database · ODbL 1.0.", style = MaterialTheme.typography.bodySmall)
-        Text("También puedes seleccionar data/app.json de la versión para computadora. La restauración reemplaza los datos de este celular. La copia contiene datos personales: elige dónde guardarla.")
     }
     if (pending != null) AlertDialog(onDismissRequest = { pending = null }, title = { Text("¿Restaurar esta copia?") }, text = { Text("Reemplazará el perfil, los anuncios y las valoraciones actuales de este celular.") },
         confirmButton = { TextButton(onClick = { pending?.let(vm::restore); pending = null }) { Text("Restaurar") } }, dismissButton = { TextButton(onClick = { pending = null }) { Text("Cancelar") } })
@@ -209,12 +208,11 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
             vm.filters(s.filters.copyJson().put("ubicacion", value).put("region_seleccionada", true))
         }
         Choice("Modalidad", s.filters.text("modalidad"), listOf("" to "Cualquiera", "presencial" to "Presencial", "hibrido" to "Híbrido", "remoto" to "Remoto"), enabled) { set("modalidad", it) }
-        if (CountryScope.canonicalName(s.filters.text("pais")) in listOf("United States", "Canada")) Text("Prueba cargos en inglés, como software engineer o data analyst, para encontrar los títulos usados en esos países.", style = MaterialTheme.typography.bodySmall)
-        if (s.filters.text("ambito") in listOf("pais", "global")) Text("LinkedIn busca fuera de Perú. Remoto puede exigir residencia o permiso de trabajo en el país del anuncio; revisa los requisitos.", style = MaterialTheme.typography.bodySmall)
-        Check("Ajustar a mi condición y experiencia", s.filters.optBoolean("ajustar_perfil", true), enabled) { set("ajustar_perfil", it) }
-        Choice("Tipo de oportunidad", s.filters.text("tipo"), types, enabled) { set("tipo", it) }
+        if (s.filters.text("ambito") in listOf("pais", "global")) Text("Remoto puede exigir residencia o permiso de trabajo.", style = MaterialTheme.typography.bodySmall)
+        Check("Ajustar a mi perfil", s.filters.optBoolean("ajustar_perfil", true), enabled) { set("ajustar_perfil", it) }
+        Choice("Tipo", s.filters.text("tipo"), types, enabled) { set("tipo", it) }
 
-        TextButton(onClick = { advanced = !advanced }) { Text(if (advanced) "Cerrar opciones adicionales" else "Más filtros y fuentes") }
+        TextButton(onClick = { advanced = !advanced }) { Text(if (advanced) "Cerrar opciones" else "Más opciones") }
         if (advanced) {
             Choice("Publicadas en", s.filters.text("dias"), listOf("" to "Cualquier fecha", "1" to "24 horas", "3" to "3 días", "7" to "7 días", "14" to "14 días", "30" to "30 días"), enabled) { set("dias", it) }
             Field("Sueldo mínimo en soles al mes", s.filters.text("sueldo"), enabled) { if (it.length <= 8 && it.all(Char::isDigit)) set("sueldo", it) }
@@ -230,8 +228,7 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
             s.result.optJSONObject("busquedas")?.let { searches -> sources.filter { it.first in s.filters.strings("fuentes") }.forEach { (key, label) -> searches.optJSONObject(key)?.let { status -> Text(label, fontWeight = FontWeight.Bold); status.strings("avisos").forEach { Text(it, style = MaterialTheme.typography.bodySmall) } } } }
         }
         if (s.result.rows("ofertas").isNotEmpty()) {
-            Text("Resultados de búsqueda · ${s.result.rows("ofertas").size}", fontWeight = FontWeight.Bold)
-            Text("Inicio ordena las ofertas semejantes a tu perfil; revisa sus requisitos antes de postular.", style = MaterialTheme.typography.bodySmall)
+            Text("Resultados · ${s.result.rows("ofertas").size}", fontWeight = FontWeight.Bold)
             s.result.rows("ofertas").take(12).forEach { job -> key(job.text("id")) { JobCard(job, s.busy, vm) } }
         }
     }
@@ -244,19 +241,16 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     val profile = JSONObject(draft)
     fun set(key: String, value: String) { draft = JSONObject(draft).put(key, value).toString() }
     Form {
-        Text("Mi perfil · 2.8.0", style = MaterialTheme.typography.titleLarge)
-        Text("Describe tu experiencia (ej. «Tengo seis meses de experiencia»), o indica tus meses totales. Los requisitos del anuncio se comparan con tu perfil guardado.", style = MaterialTheme.typography.bodySmall)
-        listOf("carrera" to "Carrera o especialidad", "cargos_objetivo" to "Cargos que te interesan", "habilidades" to "Habilidades separadas por comas", "meses_experiencia" to "Meses de experiencia (0 si aún no tienes)", "ciclo" to "Ciclo actual", "experiencia" to "Experiencia, idiomas y otros datos").forEach { (key, name) ->
+        Text("Perfil · 2.9.0", style = MaterialTheme.typography.titleLarge)
+        listOf("carrera" to "Carrera o especialidad", "cargos_objetivo" to "Cargos que te interesan", "habilidades" to "Habilidades (con comas)", "meses_experiencia" to "Experiencia (meses)", "ciclo" to "Ciclo actual", "experiencia" to "Experiencia e idiomas").forEach { (key, name) ->
             Field(name, profile.text(key), !s.busy) { if (key !in listOf("meses_experiencia", "ciclo") || it.all(Char::isDigit)) set(key, it) }
         }
         val detected = RecommendationEngine.experienceMonths(profile.text("experiencia"))
         if (profile.text("meses_experiencia").isBlank() && detected != null) Text("Experiencia reconocida en tu texto: $detected meses", color = MaterialTheme.colorScheme.secondary)
         Choice("Situación académica", profile.text("situacion"), listOf("" to "Sin indicar") + listOf("Estudiante", "Egresado", "Bachiller", "Titulado").map { it to it }, !s.busy) { set("situacion", it) }
-        Text("La compatibilidad es orientativa. Revisa las bases completas antes de postular. Tus valoraciones ajustan el orden sin cambiar tus filtros.")
         Button(onClick = { vm.saveProfile(JSONObject(draft)) }, enabled = s.ready && !s.busy, modifier = Modifier.fillMaxWidth()) { Text("Guardar perfil") }
-        Text("Guarda el perfil para conservarlo al cerrar la app y recalcular tus recomendaciones.", style = MaterialTheme.typography.bodySmall)
         TextButton(onClick = { more("añadir") }) { Text("Añadir una oferta") }
-        TextButton(onClick = { more("datos") }) { Text("Mis datos y copia de seguridad") }
+        TextButton(onClick = { more("datos") }) { Text("Mis datos") }
     }
 }
 @Composable private fun Tracking(s: JobsState, vm: JobsViewModel) {
@@ -266,10 +260,10 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Text("Tu agenda", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
-            OutlinedButton(onClick = vm::reviewAgenda, enabled = !s.busy && jobs.isNotEmpty()) { Text("Revisar fechas en las fuentes") }
+            OutlinedButton(onClick = vm::reviewAgenda, enabled = !s.busy && jobs.isNotEmpty()) { Text("Revisar fechas") }
             s.result.strings("revision_agenda").forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
             Choice("Ver", mode, listOf("activa" to "Por postular", "postulada" to "Postuladas", "todas" to "Todas, incluidas vencidas")) { mode = it }
-            if (shown.isEmpty()) Text("Marca Me interesa o guarda una oferta para seguir sus fechas y preparar los requisitos.", modifier = Modifier.padding(vertical = 20.dp))
+            if (shown.isEmpty()) Text("Guarda una oferta o marca Me interesa.", modifier = Modifier.padding(vertical = 20.dp))
         }
         items(shown, key = { "track:${it.text("id")}" }) { job ->
             var expanded by rememberSaveable(job.text("id")) { mutableStateOf(false) }
@@ -282,15 +276,15 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
                     Text(job.text("empresa"), color = Color(0xFF63748B))
                     InfoLine("calendar", "Cierre: ", job.text("cierre").ifBlank { "No publicado; consulta las bases" })
                     if (job.text("cierre_evidencia").isNotBlank()) Text(job.text("cierre_evidencia"), style = MaterialTheme.typography.bodySmall)
-                    Choice("Estado de postulación", job.text("postulacion").ifBlank { "pendiente" }, listOf("pendiente" to "Pendiente", "preparando" to "Preparando", "postulada" to "Postulada", "descartada" to "Descartada"), !s.busy) { vm.track(job.text("id"), state = it) }
+                    Choice("Estado", job.text("postulacion").ifBlank { "pendiente" }, listOf("pendiente" to "Pendiente", "preparando" to "Preparando", "postulada" to "Postulada", "descartada" to "Descartada"), !s.busy) { vm.track(job.text("id"), state = it) }
                     val checks = job.rows("requisitos")
                     val ready = job.strings("preparados")
                     Text("${checks.count { it.text("clave") in ready }} de ${checks.size} requisitos preparados", fontWeight = FontWeight.Bold)
                     TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Cerrar mi lista" else "Organizar requisitos") }
                     if (expanded) {
                         Text("Última lectura: ${job.text("revisado").take(10).ifBlank { "sin registrar" }}", style = MaterialTheme.typography.bodySmall)
-                        Text("Preparado significa que revisaste o reuniste la evidencia. La casilla no cambia la compatibilidad de tu perfil.", style = MaterialTheme.typography.bodySmall)
-                        if (checks.isEmpty()) Text("No se reconocieron requisitos. Revisa la descripción y las bases del anuncio.")
+                        Text("Preparado no significa requisito cumplido.", style = MaterialTheme.typography.bodySmall)
+                        if (checks.isEmpty()) Text("Revisa los requisitos en el anuncio.")
                         checks.forEach { check ->
                             Column {
                                 Check("${check.text("nombre")} · ${check.text("estado")}", check.text("clave") in ready, !s.busy) { vm.track(job.text("id"), requirement = check.text("clave")) }
@@ -300,7 +294,7 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
                     }
                     val uri = LocalUriHandler.current
                     var error by remember { mutableStateOf(false) }
-                    Button(onClick = { error = runCatching { uri.openUri(job.text("url")) }.isFailure }, enabled = job.text("url").isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Abrir anuncio y bases") }
+                    Button(onClick = { error = runCatching { uri.openUri(job.text("url")) }.isFailure }, enabled = job.text("url").isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Ver anuncio") }
                     if (error) Text("No se pudo abrir el anuncio.")
                 }
             }
@@ -312,9 +306,17 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     var shown by rememberSaveable { mutableIntStateOf(40) }
     val jobs = remember(s.result) { s.result.rows("recomendaciones") }
     val listState = rememberLazyListState()
+    val refreshState = rememberPullToRefreshState()
+    var refreshGesture by remember { mutableStateOf(false) }
     val last by remember { derivedStateOf { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 } }
     LaunchedEffect(last, shown, jobs.size) { if (last >= shown - 5 && shown < jobs.size) shown += 40 }
-    PullToRefreshBox(isRefreshing = s.searching, onRefresh = vm::refreshHome, modifier = Modifier.fillMaxSize().testTag("home-refresh")) {
+    Box(Modifier.fillMaxSize().testTag("home-refresh").pointerInput(listState) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            refreshGesture = !listState.canScrollBackward && !listState.isScrollInProgress && down.position.y <= size.height * .25f
+            do { val event = awaitPointerEvent(PointerEventPass.Initial) } while (event.changes.any { it.pressed })
+        }
+    }.pullToRefresh(isRefreshing = s.searching, state = refreshState, enabled = refreshGesture && !s.busy, onRefresh = { if (refreshGesture && !listState.canScrollBackward) vm.refreshHome() })) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().testTag("home-feed"), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (jobs.isEmpty()) item {
                 Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
@@ -323,6 +325,7 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
             }
             items(jobs.take(shown), key = { "home:${it.text("id")}" }) { JobCard(it, s.busy, vm) }
         }
+        if (refreshGesture || s.searching) PullToRefreshDefaults.Indicator(state = refreshState, isRefreshing = s.searching, modifier = Modifier.align(Alignment.TopCenter).testTag("refresh-indicator"))
     }
 }
 @Composable private fun JobCard(job: JSONObject, busy: Boolean, vm: JobsViewModel, alternative: Boolean = false) {
@@ -411,8 +414,7 @@ private val types = listOf("" to "Cualquiera", "empleo" to "Empleo", "practicas"
     val job = JSONObject(draft)
     LaunchedEffect(s.message) { if (s.message == "Oferta guardada en este celular.") draft = "{}" }
     Form {
-        Text("Añade una oferta por su descripción", style = MaterialTheme.typography.titleLarge)
-        Text("Pega el título, enlace y requisitos de un anuncio. Los enlaces de LinkedIn se guardan con esa fuente.")
+        Text("Añadir oferta", style = MaterialTheme.typography.titleLarge)
         listOf("titulo" to "Título", "empresa" to "Empresa", "url" to "Enlace original", "ubicacion" to "Ubicación", "publicado" to "Publicación (AAAA-MM-DD, opcional)", "cierre" to "Cierre (AAAA-MM-DD, opcional)", "descripcion" to "Descripción y requisitos").forEach { (key, name) -> Field(name, job.text(key), !s.busy) { draft = JSONObject(draft).put(key, it).toString() } }
         Choice("Tipo", job.text("tipo").ifBlank { "empleo" }, types.filter { it.first.isNotBlank() }, !s.busy) { draft = JSONObject(draft).put("tipo", it).toString() }
         Choice("Modalidad", job.text("modalidad"), listOf("" to "Sin indicar", "presencial" to "Presencial", "hibrido" to "Híbrido", "remoto" to "Remoto"), !s.busy) { draft = JSONObject(draft).put("modalidad", it).toString() }

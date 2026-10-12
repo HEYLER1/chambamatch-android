@@ -2,9 +2,9 @@
 
 Aplicación autónoma en **Kotlin y Jetpack Compose** para buscar empleos, comparar requisitos con tu experiencia y organizar postulaciones. Funciona en **Android 8 o posterior**, con tu perfil y aprendizaje guardados en el celular.
 
-**Versión 2.8.0 · Android job finder · job matching · employment tracker**
+**Versión 2.9.0 · Android job finder · job matching · employment tracker**
 
-[Descargar APK 2.8.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.8.0.apk) · [Guía completa](docs/GUIA.md) · [Investigación y referencias](REFERENCIAS.md)
+[Descargar APK 2.9.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.9.0.apk) · [Guía completa](docs/GUIA.md) · [Investigación y referencias](REFERENCIAS.md)
 
 ## Qué puedes hacer
 
@@ -22,13 +22,13 @@ Inicio muestra directamente las ofertas semejantes a tu perfil, sin cabeceras, c
 
 | Inicio: recomendaciones | Buscar: filtros |
 | --- | --- |
-| <img src="screenshots/inicio-2.8.0.png" width="280" alt="Inicio con recomendaciones guardadas de ChambaMatch 2.8.0"> | <img src="screenshots/buscar-2.6.0.png" width="280" alt="Búsqueda separada con filtros de país y región"> |
+| <img src="screenshots/inicio-2.9.0.png" width="280" alt="Inicio con recomendaciones guardadas de ChambaMatch 2.8.0"> | <img src="screenshots/buscar-2.9.0.png" width="280" alt="Búsqueda separada con filtros de país y región"> |
 
 Las ofertas de la captura de Inicio son ficticias y se utilizan exclusivamente en pruebas.
 
 ## Instalar y empezar
 
-1. Descarga la [APK de prueba 2.5.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.8.0.apk) e instálala. Si ya usas ChambaMatch, instala encima **sin desinstalar** para conservar tus datos.
+1. Descarga la [APK de prueba 2.5.0](https://github.com/HEYLER1/chambamatch-android/raw/refs/heads/main/apk/ChambaMatch-2.9.0.apk) e instálala. Si ya usas ChambaMatch, instala encima **sin desinstalar** para conservar tus datos.
 2. En **Perfil**, completa tu información real: carrera, habilidades y experiencia. Puedes escribir una duración clara, como «Tengo seis meses de experiencia», o indicar tus meses totales.
 3. En **Buscar**, selecciona país, región, modalidad, cargo y tipo de oportunidad. Pulsa **Buscar trabajos**.
 4. Revisa en **Inicio** la evidencia de requisitos. **Me interesa** o el marcador incorporan la oferta a **Seguimiento**.
@@ -93,3 +93,11 @@ Inicio contiene sólo las tarjetas y la navegación. La recarga se realiza **des
 Antes de mostrar Inicio se cargan el catálogo, el perfil, las ofertas y su clasificación. Si hay ofertas semejantes guardadas, se muestran sin esperar una consulta de red. Si hay perfil y faltan recomendaciones, se intenta una consulta de hasta 12 segundos; si la fuente no responde, la app termina la carga sin inventar anuncios. Durante esta preparación aparece el logo y un indicador de progreso. Sin perfil, el icono central permite completarlo.
 
 Validación final de 2.8.0: compilación, lint, **50 pruebas unitarias y 16 instrumentadas locales aprobadas** en Android 17. Se verificó el gesto de deslizar para recargar, la ausencia de cabeceras y botón Actualizar, la carga de ofertas guardadas, las recomendaciones sin umbral de 80%, el orden por semejanza independiente del cumplimiento de experiencia y la conservación de las preferencias de búsqueda. Las cuatro pruebas optativas de red se omitieron. La captura de Inicio contiene ofertas ficticias utilizadas exclusivamente en pruebas.
+
+## Ajustes de 2.9.0
+
+La recarga requiere iniciar el gesto en el cuarto superior de Inicio, con la lista ya situada arriba y sin desplazamiento en curso. Un gesto que empieza con la lista desplazada no activa la recarga aunque llegue al principio; arrastrar desde el centro tampoco la inicia. El desplazamiento normal y la carga de más tarjetas permanecen independientes de la consulta de fuentes.
+
+Se eliminan la marca superior y los párrafos repetidos de los formularios. Los controles usan etiquetas breves: Más opciones, Ajustar a mi perfil, Experiencia (meses), Revisar fechas y Mis datos. Se conservan los requisitos, las advertencias sobre permisos de trabajo, el significado de la preparación de documentos y la confirmación al restaurar una copia.
+
+Validación de 2.9.0: compilación, lint, 50 pruebas unitarias y 18 instrumentadas locales aprobadas en Android 17. Se comprueba la recarga desde arriba, que un gesto iniciado en el centro no la active y que volver al inicio mientras se desplaza una lista tampoco la active. Las consultas optativas de red se omitieron. Las capturas contienen ofertas ficticias de prueba.

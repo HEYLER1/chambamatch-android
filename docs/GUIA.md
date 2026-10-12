@@ -4,7 +4,7 @@ La app funciona en Android 8 o posterior **sin computadora, sin servidor y sin P
 
 ## Instalar y usar
 
-Compila o instala el APK de prueba (`apk/ChambaMatch-2.8.0.apk`, o `app/build/outputs/apk/debug/app-debug.apk` después de compilar) y abre **ChambaMatch Perú**. No hay pantalla de conexión ni claves de servidor.
+Compila o instala el APK de prueba (`apk/ChambaMatch-2.9.0.apk`, o `app/build/outputs/apk/debug/app-debug.apk` después de compilar) y abre **ChambaMatch Perú**. No hay pantalla de conexión ni claves de servidor.
 
 Instala la actualización sobre la app existente, sin desinstalar, para conservar tus datos.
 
@@ -119,3 +119,11 @@ Inicio no tiene cabecera, contadores, filtros ni botón Actualizar. Desliza haci
 El arranque prepara todos los datos locales antes de mostrar la lista. Si faltan ofertas relacionadas y existe un perfil, consulta las fuentes durante un máximo de 12 segundos. No bloquea indefinidamente el inicio sin conexión y no rellena la lista con anuncios ficticios. El perfil y el seguimiento mantienen su almacenamiento privado.
 
 Validación final de 2.8.0: compilación, lint, **50 pruebas unitarias y 16 instrumentadas locales aprobadas** en Android 17. Se verificó el gesto de deslizar para recargar, la ausencia de cabeceras y botón Actualizar, la carga de ofertas guardadas, las recomendaciones sin umbral de 80%, el orden por semejanza independiente del cumplimiento de experiencia y la conservación de las preferencias de búsqueda. Las cuatro pruebas optativas de red se omitieron. La captura de Inicio contiene ofertas ficticias utilizadas exclusivamente en pruebas.
+
+## Ajustes de 2.9.0
+
+La recarga requiere iniciar el gesto en el cuarto superior de Inicio, con la lista ya situada arriba y sin desplazamiento en curso. Un gesto que empieza con la lista desplazada no activa la recarga aunque llegue al principio; arrastrar desde el centro tampoco la inicia. El desplazamiento normal y la carga de más tarjetas permanecen independientes de la consulta de fuentes.
+
+Se eliminan la marca superior y los párrafos repetidos de los formularios. Los controles usan etiquetas breves: Más opciones, Ajustar a mi perfil, Experiencia (meses), Revisar fechas y Mis datos. Se conservan los requisitos, las advertencias sobre permisos de trabajo, el significado de la preparación de documentos y la confirmación al restaurar una copia.
+
+Validación de 2.9.0: compilación, lint, 50 pruebas unitarias y 18 instrumentadas locales aprobadas en Android 17. Se comprueba la recarga desde arriba, que un gesto iniciado en el centro no la active y que volver al inicio mientras se desplaza una lista tampoco la active. Las consultas optativas de red se omitieron. Las capturas contienen ofertas ficticias de prueba.
